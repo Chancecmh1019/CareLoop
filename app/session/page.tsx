@@ -415,13 +415,13 @@ export default function SessionPage() {
     else if ('webkitExitFullscreen' in document) (document as Document & { webkitExitFullscreen: () => void }).webkitExitFullscreen()
   }
 
-  const handleLandmarks = useCallback((landmarks: LandmarkLike[] | undefined, timestampMs: number, videoWidth: number, videoHeight: number) => {
+  const handleLandmarks = useCallback((landmarks: LandmarkLike[] | undefined, worldLandmarks: LandmarkLike[] | undefined, timestampMs: number, videoWidth: number, videoHeight: number) => {
     if (!analyzingRef.current && timestampMs - lastEnvCheckRef.current > 500) {
       lastEnvCheckRef.current = timestampMs
       setEnvQuality(checkEnvironment(landmarks, videoWidth, videoHeight))
     }
     if (!analyzingRef.current) return analyzerRef.current.getSnapshot()
-    return analyzerRef.current.processFrame(landmarks, timestampMs, videoWidth, videoHeight)
+    return analyzerRef.current.processFrame(landmarks, worldLandmarks, timestampMs, videoWidth, videoHeight)
   }, [])
 
   const handleSnapshot = useCallback((next: MotionSnapshot) => {

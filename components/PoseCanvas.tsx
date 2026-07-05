@@ -14,7 +14,7 @@ interface PoseCanvasProps {
   shoulderTiltDeg?: number | null
   /** 目前追蹤品質 */
   trackingQuality?: 'good' | 'poor' | 'lost'
-  onLandmarks: (landmarks: LandmarkLike[] | undefined, timestampMs: number, videoWidth: number, videoHeight: number) => MotionSnapshot
+  onLandmarks: (landmarks: LandmarkLike[] | undefined, worldLandmarks: LandmarkLike[] | undefined, timestampMs: number, videoWidth: number, videoHeight: number) => MotionSnapshot
   onSnapshot: (snapshot: MotionSnapshot) => void
   onError?: (message: string) => void
 }
@@ -300,8 +300,9 @@ export function PoseCanvas({
       canvas.width = width
       canvas.height = height
 
-      const result = landmarker.detectForVideo(video, performance.now())
+      const result = landmarker.detectForVideo(video, performance.now()) as unknown as { landmarks?: LandmarkLike[][], worldLandmarks?: LandmarkLike[][] }
       const landmarks = result.landmarks?.[0]
+      const worldLandmarks = result.worldLandmarks?.[0]
       const ctx = canvas.getContext('2d')
 
       if (ctx) {
@@ -315,7 +316,7 @@ export function PoseCanvas({
         if (landmarks) drawGuidanceOverlay(ctx, landmarks, width, height, shoulderTiltDegRef.current)
       }
 
-      const snapshot = onLandmarksRef.current(landmarks, performance.now(), width, height)
+      const snapshot = onLandmarksRef.current(landmarks, worldLandmarks, performance.now(), width, height)
       onSnapshotRef.current(snapshot)
       frameRef.current = requestAnimationFrame(tick)
     }

@@ -47,42 +47,60 @@ function classifyTracking(visibilityAvg: number): TrackingQuality {
 }
 
 /**
+/**
  * 計算軀幹側向偏移角度（有符號，供箭頭方向使用）
- *
- * 方法：midShoulder → midHip 的水平位移比例轉換為角度
- * 正值 = 重心偏右（從鏡頭視角），負值 = 偏左
- *
- * 這比「肩線水平傾角」更能代表使用者真正的身體偏斜，
- * 因為肩線傾角在正常坐站時本來就不為零。
+ * 完全免疫 2D 投影誤差（無視攝影機 Yaw/Pitch 與人體前傾）
+ * 使用 3D worldLandmarks 幾何計算
  */
-function calcTrunkLateralDeg(
+function calcTrunkLateralDeg3D(
   ls: LandmarkLike, rs: LandmarkLike,
-  lh: LandmarkLike, rh: LandmarkLike,
-  videoWidth: number, videoHeight: number
+  lh: LandmarkLike, rh: LandmarkLike
 ): number {
-  const midShoulderX = (ls.x + rs.x) / 2
-  const midHipX = (lh.x + rh.x) / 2
-  const midShoulderY = (ls.y + rs.y) / 2
-  const midHipY = (lh.y + rh.y) / 2
+  if (lh.z === undefined) return 0 // Fallback
 
-  // Convert normalized coordinates to aspect-ratio-corrected space
-  // This ensures angles are consistent whether on a portrait phone or landscape laptop
-  const dx = (midShoulderX - midHipX) * videoWidth   // positive = shoulders shifted right vs hips
-  const dy = Math.abs(midHipY - midShoulderY) * videoHeight // vertical distance (always positive)
-
-  // Calculate shoulder width as a reference scale (independent of depth)
-  const shoulderWidth = Math.abs(rs.x - ls.x) * videoWidth
-
-  // MediaPipe 2D projection problem: 
-  // When a person leans forward (flexion), the Y-distance (dy) between shoulders and hips shrinks in 2D.
-  // This causes the atan2(dx, dy) to explode, artificially creating huge lateral tilt angles.
-  // To fix this, we suppress the angle calculation if dy is too small relative to their shoulder width,
-  // which indicates they are bent over (transitioning) and 2D lateral tilt is unreliable.
-  if (dy < shoulderWidth * 0.8) {
-    return 0 // Highly flexed forward; lateral tilt is mathematically distorted
+  // 1. Hip line vector (Right Hip to Left Hip - defines local X axis)
+  // Note: user's right hip is usually smaller X on screen, but worldLandmarks X is metric.
+  const H = {
+    x: lh.x - rh.x,
+    y: lh.y - rh.y,
+    z: (lh.z || 0) - (rh.z || 0)
   }
 
-  return Math.atan2(dx, dy) * (180 / Math.PI)
+  // 2. Trunk vector (Mid Hip to Mid Shoulder)
+  const midHip = {
+    x: (lh.x + rh.x) / 2,
+    y: (lh.y + rh.y) / 2,
+    z: ((lh.z || 0) + (rh.z || 0)) / 2
+  }
+  const midShoulder = {
+    x: (ls.x + rs.x) / 2,
+    y: (ls.y + rs.y) / 2,
+    z: ((ls.z || 0) + (rs.z || 0)) / 2
+  }
+  const T = {
+    x: midShoulder.x - midHip.x,
+    y: midShoulder.y - midHip.y,
+    z: midShoulder.z - midHip.z
+  }
+
+  // 3. Calculate 3D angle between H (Hip line) and T (Trunk)
+  const dot = H.x * T.x + H.y * T.y + H.z * T.z
+  const magH = Math.sqrt(H.x * H.x + H.y * H.y + H.z * H.z)
+  const magT = Math.sqrt(T.x * T.x + T.y * T.y + T.z * T.z)
+
+  if (magH === 0 || magT === 0) return 0
+
+  const cosTheta = dot / (magH * magT)
+  const angleRad = Math.acos(Math.max(-1, Math.min(1, cosTheta)))
+  const angleDeg = angleRad * (180 / Math.PI)
+
+  // 4. Lateral lean is deviation from 90 degrees
+  // If T is perpendicular to H in 3D space, they are standing/sitting straight up OR leaning perfectly forward.
+  // Both cases give exactly 90 degrees (invariant to pitch and yaw).
+  // H points from right to left hip. 
+  // If they lean towards their right hip, the angle increases > 90.
+  // If they lean towards their left hip, the angle decreases < 90.
+  return angleDeg - 90
 }
 
 export function checkEnvironment(landmarks: LandmarkLike[] | undefined, videoWidth: number, videoHeight: number): EnvironmentQuality {
@@ -231,7 +249,7 @@ export function createMotionAnalyzer() {
     }
   }
 
-  function processFrame(landmarks: LandmarkLike[] | undefined, timestampMs: number, videoWidth: number, videoHeight: number): MotionSnapshot {
+  function processFrame(landmarks: LandmarkLike[] | undefined, worldLandmarks: LandmarkLike[] | undefined, timestampMs: number, videoWidth: number, videoHeight: number): MotionSnapshot {
     if (!landmarks || landmarks.length === 0) {
       latestMetric = {
         timestampMs,
@@ -274,18 +292,26 @@ export function createMotionAnalyzer() {
     const legExtension = rawLegExtension !== null ? legExtensionFilter.update(rawLegExtension) : null
 
     // ── Tilt angle: trunk lateral deviation (SIGNED) ──────────────
-    // Uses midShoulder vs midHip horizontal offset instead of
-    // shoulder-line angle, which varies naturally during sit-to-stand.
+    // Uses 3D world landmarks to completely eliminate yaw and pitch projection errors.
     let rawTilt: number | null = null
-    if (leftShoulder && rightShoulder && leftHip && rightHip) {
-      rawTilt = calcTrunkLateralDeg(leftShoulder, rightShoulder, leftHip, rightHip, videoWidth, videoHeight)
+    if (worldLandmarks && worldLandmarks.length > RIGHT_HIP) {
+      rawTilt = calcTrunkLateralDeg3D(
+        worldLandmarks[LEFT_SHOULDER], worldLandmarks[RIGHT_SHOULDER],
+        worldLandmarks[LEFT_HIP], worldLandmarks[RIGHT_HIP]
+      )
+    } else if (leftShoulder && rightShoulder && leftHip && rightHip) {
+      // Fallback to 2D approximation if worldLandmarks missing (rare)
+      const Tx = (leftShoulder.x + rightShoulder.x) / 2 - (leftHip.x + rightHip.x) / 2
+      const Ty = (leftShoulder.y + rightShoulder.y) / 2 - (leftHip.y + rightHip.y) / 2
+      rawTilt = Math.atan2(Tx * videoWidth, Math.abs(Ty) * videoHeight) * (180 / Math.PI)
+      if (Math.abs(Ty) * videoHeight < Math.abs(leftShoulder.x - rightShoulder.x) * videoWidth * 0.8) {
+        rawTilt = 0 // Apply the old 2D flexion suppression as fallback
+      }
     }
     const smoothedTilt = rawTilt !== null ? tiltFilter.update(rawTilt) : null
 
     if (smoothedTilt !== null) {
       tiltSignedDeg = smoothedTilt
-      // Track absolute max for session summary statistics
-      tiltMaxDeg = Math.max(tiltMaxDeg, Math.abs(smoothedTilt))
     }
 
     let motionState: MotionState = 'unknown'
@@ -374,9 +400,18 @@ export function createMotionAnalyzer() {
 
     // ── Instability detection: hipX lateral jump ──────────────────
     if (hipX !== null && previousHipX !== null && Math.abs(hipX - previousHipX) > MOTION_THRESHOLDS.INSTABILITY_X_JUMP) {
-      instabilityEvents += 1
+      // Only count instability if we are actually tracking a known state
+      if (motionState !== 'unknown') {
+        instabilityEvents += 1
+      }
     }
     if (hipX !== null) previousHipX = hipX
+
+    // ── Track tiltMaxDeg ONLY during valid test phases ────────────
+    // Exclude 'unknown' (calibration/walking in) to prevent noisy spikes from ruining the session max.
+    if (motionState !== 'unknown' && trackingQuality !== 'lost' && smoothedTilt !== null) {
+      tiltMaxDeg = Math.max(tiltMaxDeg, Math.abs(smoothedTilt))
+    }
 
     // ── State machine ─────────────────────────────────────────────
     if (motionState !== previousState) {
