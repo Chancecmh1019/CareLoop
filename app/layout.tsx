@@ -2,10 +2,13 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'CareLoop 安步 | 居家動作觀察與照護提醒',
-  description:
-    'CareLoop 安步是一套隱私優先的居家坐站動作觀察與照護提醒工具。',
-  keywords: ['CareLoop 安步', '居家照護', '坐站測試', '姿態分析', '照護提醒'],
+  title: 'CareLoop | 居家坐站與平衡觀察',
+  description: 'CareLoop 使用瀏覽器端姿勢偵測，協助長輩在家完成坐站測驗與平衡觀察。',
+  keywords: ['CareLoop', '坐站測驗', '平衡觀察', '長輩照護', '姿勢偵測'],
+  icons: {
+    icon: [{ url: '/old-people.svg', type: 'image/svg+xml' }],
+    shortcut: ['/old-people.svg'],
+  },
 }
 
 export const viewport: Viewport = {
