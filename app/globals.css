@@ -1,7 +1,8 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700;900&family=Noto+Serif:wght@400;500;600;700;900&display=swap");
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "Inter", system-ui, sans-serif;
+  --font-sans: "Noto Serif TC", "Noto Serif", "Songti TC", "PMingLiU", serif;
 
   --color-background: #F4EDE4;
   --color-foreground: #1F2937;
@@ -41,8 +42,10 @@
   button,
   a,
   input,
-  textarea {
+  textarea,
+  select {
     @apply focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/35;
+    font-family: inherit;
   }
 }
 
