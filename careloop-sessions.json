@@ -1,0 +1,17 @@
+[
+  {
+    "id": "f20a38c9-9cea-441e-b0b2-d88be2fd565b",
+    "timestamp": "2026-07-05T12:25:09.947Z",
+    "reps": 5,
+    "totalDurationSec": 12.8,
+    "avgDurationSec": 2.6,
+    "tiltMaxDeg": 5,
+    "instabilityEvents": 0,
+    "level": "attention",
+    "trackingQuality": "good",
+    "notes": [
+      "完成速度略低於 60-69 歲族群參考均值（12 秒），建議持續記錄趨勢。",
+      "CareLoop 僅提供居家動作觀察記錄，不取代物理治療師或醫師的專業評估。"
+    ]
+  }
+]
