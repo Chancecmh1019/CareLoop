@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import Link from 'next/link'
 import {
   BookOpen,
   ChevronDown,
@@ -507,7 +508,7 @@ export default function ValidationPage() {
                     Q: 你們的算法是針對健康長輩訓練的，虛弱長輩怎麼辦？
                   </p>
                   <p>
-                    A: 這是一個已知的局限性，我們在文件中明確聲明（見 docs/validation-benchmark.md）。
+                    A: 這是一個已知的局限性，我們在<Link href="/benchmark" className="text-[#2D5F5D] underline">文獻基準驗證</Link>文件中明確聲明。
                     我們的參數一致性測試基於 Bohannon 2006 的「功能性長輩」常模分佈，
                     確實不代表重度失能族群。然而，我們的個人化基準線設計在此有優勢：
                     對虛弱長輩來說，「他今天比自己的平均慢了 30%」比「他比全體平均慢了 40%」

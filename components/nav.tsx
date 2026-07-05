@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Activity, BarChart2, BarChart3, FlaskConical, ShieldCheck } from 'lucide-react'
+import { Activity, BarChart2, BarChart3, FlaskConical, ShieldCheck, BookOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // 主要流程步驟（左側突出顯示）
@@ -14,6 +14,7 @@ const flowSteps = [
 
 // 輔助頁面（右側，較小）
 const auxLinks = [
+  { href: '/benchmark', label: '基準', icon: BookOpen },
   { href: '/validation', label: '驗證', icon: FlaskConical },
   { href: '/privacy', label: '隱私', icon: ShieldCheck },
 ]
