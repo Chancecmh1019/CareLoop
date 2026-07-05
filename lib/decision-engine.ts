@@ -38,7 +38,7 @@ export const MOTION_THRESHOLDS = {
   /** 35° 以上才視為明顯偏移，建議家人確認 */
   MAX_TILT_DEG_REVIEW: 35,
   /** 側向晃動判定：需 ≥5 次才升級，避免正常起立動作誤觸 */
-  INSTABILITY_X_JUMP: 0.10,
+  INSTABILITY_X_JUMP: 0.15,
   FAST_REP_SEC: 1.2,
   /**
    * SLOW_AVG_SEC = 2.4s/次（5次總計 12s）

@@ -70,8 +70,17 @@ function calcTrunkLateralDeg(
   const dx = (midShoulderX - midHipX) * videoWidth   // positive = shoulders shifted right vs hips
   const dy = Math.abs(midHipY - midShoulderY) * videoHeight // vertical distance (always positive)
 
-  // Guard against degenerate frames where shoulder and hip are at same y level
-  if (dy < 0.05 * videoHeight) return 0
+  // Calculate shoulder width as a reference scale (independent of depth)
+  const shoulderWidth = Math.abs(rs.x - ls.x) * videoWidth
+
+  // MediaPipe 2D projection problem: 
+  // When a person leans forward (flexion), the Y-distance (dy) between shoulders and hips shrinks in 2D.
+  // This causes the atan2(dx, dy) to explode, artificially creating huge lateral tilt angles.
+  // To fix this, we suppress the angle calculation if dy is too small relative to their shoulder width,
+  // which indicates they are bent over (transitioning) and 2D lateral tilt is unreliable.
+  if (dy < shoulderWidth * 0.8) {
+    return 0 // Highly flexed forward; lateral tilt is mathematically distorted
+  }
 
   return Math.atan2(dx, dy) * (180 / Math.PI)
 }
