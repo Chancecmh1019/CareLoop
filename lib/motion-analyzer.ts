@@ -131,6 +131,11 @@ export function createMotionAnalyzer() {
   let instabilityEvents = 0
   let latestMetric: FrameMetric | null = null
   let trackingQuality: TrackingQuality = 'lost'
+  // Coaching pace: track WHEN we last confirmed standing/sitting so we can
+  // add a pause before issuing the next coaching prompt.
+  let standingConfirmedAtMs: number | null = null
+  let sittingConfirmedAtMs: number | null = null
+  let latestTimestampMs = 0
 
   // ── Calibration: require the user to be stable for N frames ──────
   // We lower the threshold to 0.20 (very permissive) but add a stability
@@ -172,6 +177,9 @@ export function createMotionAnalyzer() {
     calibrationLegExtensionSum = 0
     lowerBaselineCount = 0
     previousHipYForStability = null
+    standingConfirmedAtMs = null
+    sittingConfirmedAtMs = null
+    latestTimestampMs = 0
     hipYFilter.reset()
     hipXFilter.reset()
     legExtensionFilter.reset()
@@ -181,14 +189,25 @@ export function createMotionAnalyzer() {
   function getSnapshot(): MotionSnapshot {
     const end = completedAtMs ?? latestMetric?.timestampMs ?? startedAtMs ?? 0
     const totalDurationSec = startedAtMs ? Math.max(0, (end - startedAtMs) / 1000) : 0
+    const now = latestTimestampMs
+    // Coaching pace: don't immediately prompt the next action.
+    // After standing, wait STAND_PAUSE_MS before prompting "sit".
+    // After sitting, wait SIT_PAUSE_MS before prompting "stand".
+    const standPauseElapsed = standingConfirmedAtMs !== null
+      ? now - standingConfirmedAtMs >= MOTION_THRESHOLDS.STAND_PAUSE_MS
+      : false
+    const sitPauseElapsed = sittingConfirmedAtMs !== null
+      ? now - sittingConfirmedAtMs >= MOTION_THRESHOLDS.SIT_PAUSE_MS
+      : true  // initially ready immediately
+
     const nextAction: CoachAction =
       reps >= MOTION_THRESHOLDS.TARGET_REPS
         ? 'complete'
         : seatedHipY === null
           ? 'hold'
           : sawStanding
-            ? 'sit'
-            : 'stand'
+            ? (standPauseElapsed ? 'sit' : 'hold')   // wait for full stand before cueing sit
+            : (sitPauseElapsed  ? 'stand' : 'hold')  // rest between reps
     return {
       reps,
       nextAction,
@@ -359,6 +378,10 @@ export function createMotionAnalyzer() {
     const stateHeld = timestampMs - stateSince >= MOTION_THRESHOLDS.MIN_STATE_HOLD_MS
     if (stateHeld && reps < MOTION_THRESHOLDS.TARGET_REPS) {
       if (motionState === 'standing') {
+        if (!sawStanding) {
+          // First frame we've been stably standing — record for pace timing
+          standingConfirmedAtMs = timestampMs
+        }
         sawStanding = true
         if (startedAtMs === null) startedAtMs = timestampMs
       }
@@ -380,9 +403,13 @@ export function createMotionAnalyzer() {
             : seatedLegExtension
         }
         if (reps >= MOTION_THRESHOLDS.TARGET_REPS) completedAtMs = timestampMs
+        // Record when we settled back to sitting for rest-between-reps pacing
+        sittingConfirmedAtMs = timestampMs
+        standingConfirmedAtMs = null
       }
     }
 
+    latestTimestampMs = timestampMs
     latestMetric = {
       timestampMs,
       hipY,

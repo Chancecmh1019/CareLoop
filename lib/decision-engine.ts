@@ -9,22 +9,36 @@ import type { ObservationLevel, SessionEvent, TrackingQuality } from '@/lib/type
  *   - >12s（2.4s/次）= 比 60-69 歲平均偏慢 → attention
  *   - >16.7s（3.34s/次）= 文獻定義高偏移範圍 → review
  *
- * 偏斜閾值依據：
- *   臨床觀察建議，>10° 開始介入，>18° 為明顯異常
+ * 偏斜閾值說明（居家攝影機版本）：
+ *   臨床 FTSST 對側向偏斜無標準化角度閾值（Bohannon 2006；MedBridge 2025）。
+ *   偏斜程度以「定性觀察」為主，非精確角度。
+ *   本系統使用攝影機姿態估算，MediaPipe 本身有 ±5–8° 的估算誤差，
+ *   加上相機角度偏差與自然體態不對稱，設定過嚴的閾值會造成大量誤判。
+ *
+ *   依居家攝影機工具的合理容錯範圍設定：
+ *   - attention ≥ 20°：超過正常估算誤差範圍，值得留意
+ *   - review   ≥ 35°：明顯偏移，建議家人觀察
  *
  * 法律聲明：本系統輸出為動作觀察描述，不構成醫療診斷或健康建議。
  */
 export const MOTION_THRESHOLDS = {
   TARGET_REPS: 5,
-  MIN_STATE_HOLD_MS: 250,
+  MIN_STATE_HOLD_MS: 300,
+  /** 站立後等待多久才播「請坐下」語音提示（ms）— 給長輩完整站直的時間 */
+  STAND_PAUSE_MS: 1800,
+  /** 坐下確認後等待多久才播「請起立」語音提示（ms）— 給長輩喘息的時間 */
+  SIT_PAUSE_MS: 1200,
   STAND_DELTA_Y: 0.1,
   SITTING_TOLERANCE_Y: 0.075,
   LEG_EXTENSION_DELTA_Y: 0.08,
   LEG_EXTENSION_SITTING_TOLERANCE_Y: 0.045,
   MIN_VISIBILITY_AVG: 0.55,
-  MAX_TILT_DEG_ATTENTION: 10,
-  MAX_TILT_DEG_REVIEW: 18,
-  INSTABILITY_X_JUMP: 0.08,
+  /** 居家攝影機容錯：MediaPipe 估算誤差 ±5-8°，加上體態自然不對稱，20° 以下視為正常範圍 */
+  MAX_TILT_DEG_ATTENTION: 20,
+  /** 35° 以上才視為明顯偏移，建議家人確認 */
+  MAX_TILT_DEG_REVIEW: 35,
+  /** 側向晃動判定：需 ≥5 次才升級，避免正常起立動作誤觸 */
+  INSTABILITY_X_JUMP: 0.10,
   FAST_REP_SEC: 1.2,
   /**
    * SLOW_AVG_SEC = 2.4s/次（5次總計 12s）
@@ -82,15 +96,16 @@ export function evaluateSession(input: DecisionInput): Pick<SessionEvent, 'level
   // 這是 fuseModalities() 結果真正接入決策路徑的地方
   const swayConfirmed = (input.swayConfidence ?? 0) >= 0.7
 
-  if (input.instabilityEvents >= 2 || swayConfirmed) {
+  // 晃動判定：需要 >=5 次才觸發 review，避免正常起立動作就被誤判
+  if (input.instabilityEvents >= 5 || swayConfirmed) {
     level = 'review'
-    const reason = swayConfirmed && input.instabilityEvents < 2
+    const reason = swayConfirmed && input.instabilityEvents < 5
       ? '雙模態感測器確認明顯側向晃動（視覺 + 慣性一致），建議家人確認操作環境是否安全。'
       : '偵測到多次明顯晃動訊號，建議家人確認操作環境是否安全，必要時陪同操作。'
     notes.push(reason)
-  } else if (input.instabilityEvents === 1 && level === 'smooth') {
+  } else if (input.instabilityEvents >= 2 && level === 'smooth') {
     level = 'attention'
-    notes.push('偵測到一次晃動訊號，建議持續觀察後續測試是否重複出現。')
+    notes.push('偵測到少數晃動訊號，建議持續觀察後續測試是否重複出現。')
   }
 
   // 時間觀察：依 Bohannon (2006) 臨床規範值
