@@ -107,15 +107,15 @@ function HudButton({
       aria-label={label}
       title={label}
       className={cn(
-        'flex min-h-[72px] min-w-[72px] touch-manipulation select-none items-center justify-center gap-2 rounded-2xl border border-white/20 px-4 text-sm font-black text-white shadow-2xl backdrop-blur-md transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40',
-        wide && 'min-w-[160px] px-6 text-base',
+        'flex min-h-14 min-w-0 touch-manipulation select-none items-center justify-center gap-1.5 rounded-2xl border border-white/20 px-2 text-xs font-black text-white shadow-2xl backdrop-blur-md transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[72px] sm:min-w-[72px] sm:gap-2 sm:px-4 sm:text-sm',
+        wide && 'col-span-2 px-3 text-sm sm:min-w-[160px] sm:px-6 sm:text-base',
         tone === 'dark' && 'bg-black/55 hover:bg-black/70',
         tone === 'primary' && 'bg-[#2D5F5D]/90 hover:bg-[#244C4A]',
         tone === 'green' && 'bg-[#2F855A]/95 hover:bg-[#276749]',
         tone === 'red' && 'bg-[#DC2626]/95 hover:bg-[#B91C1C]',
       )}
     >
-      <Icon className="h-8 w-8 shrink-0" aria-hidden="true" />
+      <Icon className="h-6 w-6 shrink-0 sm:h-8 sm:w-8" aria-hidden="true" />
       {wide && <span>{label}</span>}
     </button>
   )
@@ -598,7 +598,7 @@ export default function SessionPage() {
         </div>
 
         {analyzing && (
-          <section className="pointer-events-none absolute bottom-[88px] left-3 right-3 z-20 flex items-center gap-2 sm:bottom-[96px] sm:left-5 sm:right-5">
+          <section className="pointer-events-none absolute bottom-[150px] left-3 right-3 z-20 flex items-center gap-2 sm:bottom-[96px] sm:left-5 sm:right-5">
             <div className="flex flex-1 items-center gap-2 overflow-x-auto rounded-2xl border border-white/20 bg-black/55 px-3 py-2 shadow-2xl backdrop-blur-md">
               {[
                 { label: '時間', val: `${snapshot.totalDurationSec.toFixed(1)}s` },
@@ -623,7 +623,7 @@ export default function SessionPage() {
 
         {!showCompletion && (
           <section className="absolute bottom-3 left-3 right-3 z-40 sm:bottom-4 sm:left-5 sm:right-5">
-            <div className="flex items-center justify-between gap-2 rounded-[1.75rem] border border-white/20 bg-black/60 p-2 shadow-2xl backdrop-blur-md">
+            <div className="grid grid-cols-4 gap-2 rounded-[1.25rem] border border-white/20 bg-black/60 p-2 shadow-2xl backdrop-blur-md sm:flex sm:items-center sm:justify-between sm:rounded-[1.75rem]">
               <HudButton label={cameraOn ? '關閉相機' : '開啟相機'} icon={Camera} onClick={toggleCamera} tone="primary" />
               {!analyzing ? (
                 <HudButton label="開始測試" icon={Play} onClick={startTest} disabled={!cameraOn || (envQuality ? !envQuality.ready : false)} tone="green" wide />
