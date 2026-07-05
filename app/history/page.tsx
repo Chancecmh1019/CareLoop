@@ -288,7 +288,7 @@ export default function HistoryPage() {
         .slice(-10)
         .map((session) => ({
           date: formatSessionDate(session.timestamp),
-          平均秒數: Number(session.avgDurationSec.toFixed(1)),
+          單次平均: Number(session.avgDurationSec.toFixed(1)),
           晃動事件: session.instabilityEvents,
           最大偏斜: session.tiltMaxDeg,
         })),
@@ -419,7 +419,7 @@ export default function HistoryPage() {
             <section className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-4">
                 <MetricCard icon={CheckCircle2} label="最新狀態" value={levelLabel(trend.latestLevel)} tone={trend.latestLevel ?? 'default'} />
-                <MetricCard icon={Clock} label="平均秒數" value={`${trend.avgDurationSec?.toFixed(1) ?? '-'}s`} />
+                <MetricCard icon={Clock} label="單次平均" value={`${trend.avgDurationSec?.toFixed(1) ?? '-'}s`} />
                 <MetricCard
                   icon={AlertTriangle}
                   label="晃動事件"

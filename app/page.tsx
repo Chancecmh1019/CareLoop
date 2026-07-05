@@ -6,7 +6,6 @@ import {
   Camera,
   GitMerge,
   HeartPulse,
-  LockKeyhole,
   MessageSquareText,
   Mic2,
   ShieldCheck,
@@ -188,40 +187,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 誠實聲明區 */}
-        <section className="border-t border-[#D5C9BB] bg-[#F4EDE4] py-16">
-          <div className="mx-auto max-w-6xl px-4">
-            <div className="rounded-2xl border border-[#2D5F5D]/20 bg-[#2D5F5D]/5 p-6 md:p-8">
-              <div className="grid gap-6 md:grid-cols-2 md:items-center">
-                <div>
-                  <p className="text-xs font-black text-[#D97706] mb-2">誠實聲明</p>
-                  <h3 className="text-lg font-black text-[#1F2937]">我們還沒做到的事</h3>
-                  <p className="mt-3 text-sm leading-7 text-[#4B5563]">
-                    本系統<strong>尚未對真實長輩進行正式使用者研究</strong>。目前的演算法參數一致性測試（Monte Carlo 模擬），是為了在開發早期確保軟體邏輯與臨床文獻基準相符。我們正在尋找資源，希望下一步能與物理治療所合作，展開正式的專家一致性比對（Expert Agreement Study）。
-                  </p>
-                  <p className="mt-3 text-xs text-[#6B7280]">
-                    這是一個「技術可行性原型（Proof-of-Concept）」，我們誠實面對缺乏真實驗證數據的現狀，並準備好邁向下一階段。
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  {[
-                    { icon: ShieldCheck, label: '極致隱私保護 (Privacy by Constraint)', desc: '因為技術限制選擇了本機運算，恰好符合偏鄉長輩對監視鏡頭的擔憂，資料 100% 不離開手機' },
-                    { icon: LockKeyhole, label: '跨越數位落差', desc: '將專業分析流程，化為偏鄉與資源有限家庭也能運行的免費 App' },
-                    { icon: BarChart3, label: '參數一致性驗證', desc: '以 Monte Carlo 模擬驗證決策邏輯（N=1000+）' },
-                  ].map(({ icon: Icon, label, desc }) => (
-                    <div key={label} className="flex items-start gap-3 rounded-lg border border-[#D5C9BB] bg-[#FFFDF9] p-3">
-                      <Icon className="mt-0.5 h-5 w-5 shrink-0 text-[#2D5F5D]" aria-hidden="true" />
-                      <div>
-                        <div className="text-sm font-black text-[#1F2937]">{label}</div>
-                        <div className="mt-0.5 text-xs text-[#6B7280]">{desc}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+
 
         {/* 驗證數據橫幅 */}
         <section className="border-t border-[#D5C9BB] bg-[#FFFDF9] py-14">

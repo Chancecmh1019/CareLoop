@@ -368,7 +368,7 @@ export default function FamilyPage() {
                       <span className="text-xs text-[#9CA3AF]">{formatSessionDate(s.timestamp)}</span>
                     </div>
                     <div className="mt-0.5 text-xs text-[#6B7280]">
-                      均值 {s.avgDurationSec.toFixed(1)}s · 偏斜 {s.tiltMaxDeg.toFixed(0)}° · 晃動 {s.instabilityEvents} 次
+                      單次平均 {s.avgDurationSec.toFixed(1)}s · 偏斜 {s.tiltMaxDeg.toFixed(0)}° · 晃動 {s.instabilityEvents} 次
                     </div>
                   </div>
                   {i === 0 && <span className="shrink-0 rounded-full bg-[#2D5F5D] px-2 py-0.5 text-[10px] font-black text-white">最新</span>}

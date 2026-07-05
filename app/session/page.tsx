@@ -318,8 +318,8 @@ function CompletionOverlay({
 
         <div className="mb-4 grid grid-cols-4 gap-2">
           {[
-            { label: '總耗時', value: `${session.totalDurationSec.toFixed(1)}s` },
-            { label: '平均', value: `${session.avgDurationSec.toFixed(1)}s` },
+            { label: '5次總計', value: `${session.totalDurationSec.toFixed(1)}s` },
+            { label: '單次平均', value: `${session.avgDurationSec.toFixed(1)}s` },
             { label: '最大偏斜', value: `${session.tiltMaxDeg.toFixed(0)}°` },
             { label: '晃動', value: `${session.instabilityEvents}` },
           ].map(({ label, value }) => (
@@ -705,8 +705,8 @@ export default function SessionPage() {
           <section className="pointer-events-none absolute bottom-[150px] left-3 right-3 z-20 flex items-center gap-2 sm:bottom-[96px] sm:left-5 sm:right-5">
             <div className="flex flex-1 items-center gap-2 overflow-x-auto rounded-2xl border border-white/20 bg-black/55 px-3 py-2 shadow-2xl backdrop-blur-md">
               {[
-                { label: '時間', val: `${snapshot.totalDurationSec.toFixed(1)}s` },
-                { label: '平均', val: `${snapshot.avgDurationSec.toFixed(1)}s` },
+                { label: '5次總計', val: `${snapshot.totalDurationSec.toFixed(1)}s` },
+                { label: '單次平均', val: `${snapshot.avgDurationSec.toFixed(1)}s` },
                 { label: '偏斜', val: `${snapshot.tiltMaxDeg.toFixed(0)}°` },
                 { label: '晃動', val: `${snapshot.instabilityEvents}` },
               ].map(({ label, val }) => (
