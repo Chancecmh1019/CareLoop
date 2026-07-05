@@ -355,6 +355,53 @@ function CompletionOverlay({
   )
 }
 
+function PreTestInstructions({ onStart }: { onStart: () => void }) {
+  return (
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-[2rem] border border-white/20 bg-[#1A1A1A] p-6 shadow-2xl sm:p-8">
+        <h2 className="mb-6 text-center text-2xl font-black text-white">5 次坐站測試 (FTSST) 準備指南</h2>
+        
+        <div className="space-y-6">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#2D5F5D]/30 text-[#4EB8B4]">
+              <Camera className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <div>
+              <div className="text-lg font-black text-white">1. 鏡頭架設</div>
+              <div className="mt-1 text-sm font-bold leading-relaxed text-white/70">請將手機或電腦放在正前方約 2~3 公尺處。高度建議與腰部齊平，確保起立和坐下時「全身（頭到腳）」都能完整入鏡。</div>
+            </div>
+          </div>
+          
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#D97706]/30 text-[#F59E0B]">
+              <UserRound className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <div>
+              <div className="text-lg font-black text-white">2. 座椅與姿勢</div>
+              <div className="mt-1 text-sm font-bold leading-relaxed text-white/70">請使用無輪子、高度約 43-45 公分的硬面椅子（如一般餐椅）。測試全程請「雙手交叉抱胸」，勿用手撐扶手或大腿。</div>
+            </div>
+          </div>
+          
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#2F855A]/30 text-[#4ADE80]">
+              <ArrowUp className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <div>
+              <div className="text-lg font-black text-white">3. 測試進行</div>
+              <div className="mt-1 text-sm font-bold leading-relaxed text-white/70">開啟相機後，走到椅子前坐好。系統偵測到您入鏡後會自動倒數。聽到指令後，請以最快且安全的速度連續起立並坐下 5 次。</div>
+            </div>
+          </div>
+        </div>
+        
+        <button type="button" onClick={onStart} className="mt-8 flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#2D5F5D] text-lg font-black text-white transition-transform active:scale-95">
+          <Camera className="h-6 w-6" aria-hidden="true" />
+          我準備好了，開啟相機
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function SessionPage() {
   const analyzerRef = useRef(createMotionAnalyzer())
   const coachRef = useRef(createCoachingEngine())
@@ -618,7 +665,11 @@ export default function SessionPage() {
 
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.72),transparent_30%,transparent_60%,rgba(0,0,0,0.85))]" />
 
-        {!showCompletion && (
+        {!cameraOn && !showCompletion && (
+          <PreTestInstructions onStart={toggleCamera} />
+        )}
+
+        {cameraOn && !showCompletion && (
           <section className="pointer-events-none absolute inset-x-3 top-[92px] z-20 sm:inset-x-6 sm:top-[112px]">
             <CoachCuePanel cue={coachCue} reps={snapshot.reps} />
           </section>
@@ -670,12 +721,12 @@ export default function SessionPage() {
           </section>
         )}
 
-        {!showCompletion && (
+        {cameraOn && !showCompletion && (
           <section className="absolute bottom-3 left-3 right-3 z-40 sm:bottom-4 sm:left-5 sm:right-5">
             <div className="grid grid-cols-4 gap-2 rounded-[1.25rem] border border-white/20 bg-black/60 p-2 shadow-2xl backdrop-blur-md sm:flex sm:items-center sm:justify-between sm:rounded-[1.75rem]">
-              <HudButton label={cameraOn ? '關閉相機' : '開啟相機'} icon={Camera} onClick={toggleCamera} tone="primary" />
+              <HudButton label="關閉相機" icon={Camera} onClick={toggleCamera} tone="primary" />
               {!analyzing ? (
-                <HudButton label="開始測試" icon={Play} onClick={startTest} disabled={!cameraOn || (envQuality ? !envQuality.ready : false)} tone="green" wide />
+                <HudButton label="開始測試" icon={Play} onClick={startTest} disabled={envQuality ? !envQuality.ready : false} tone="green" wide />
               ) : (
                 <HudButton label="停止" icon={Square} onClick={stopTest} tone="red" wide />
               )}
