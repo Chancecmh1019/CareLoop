@@ -219,6 +219,15 @@ function getCoachCueForDisplay({
   }
 
   if (snapshot.nextAction === 'stand') {
+    if (snapshot.reps === 0) {
+      return {
+        mode: 'stand',
+        title: '✅ 掃描完成！測驗開始',
+        body: '請開始第 1 次起立！用穩定速度站直，眼睛看前方。',
+        action: 'stand',
+        tone: 'stand',
+      }
+    }
     return {
       mode: 'stand',
       title: `第 ${Math.min(snapshot.reps + 1, MOTION_THRESHOLDS.TARGET_REPS)} 次，站起來`,
