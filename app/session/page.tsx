@@ -75,6 +75,8 @@ const EMPTY_SENSOR_READING = {
   rollRate: 0,
 }
 
+const AUTO_START_SECONDS = 8
+
 const statusTone: Record<HudStatus, string> = {
   setup: 'ring-white/10',
   ready: 'ring-[#2D5F5D]/55',
@@ -162,14 +164,16 @@ interface CoachCue {
   tone: 'neutral' | 'stand' | 'sit' | 'ready' | 'warning' | 'done'
 }
 
-function getCoachCue({
+function getCoachCueForDisplay({
   analyzing,
+  autoStartCountdown,
   cameraOn,
   envQuality,
   snapshot,
   showCompletion,
 }: {
   analyzing: boolean
+  autoStartCountdown: number | null
   cameraOn: boolean
   envQuality: EnvironmentQuality | null
   snapshot: MotionSnapshot
@@ -180,24 +184,31 @@ function getCoachCue({
   }
 
   if (!cameraOn) {
-    return { mode: 'camera', title: '先開啟相機', body: '我會帶你一步一步完成坐站測驗。', action: null, tone: 'neutral' }
+    return { mode: 'camera', title: '先開啟相機', body: '開啟後走到椅子位置；全身入鏡後會自動倒數開始。', action: null, tone: 'neutral' }
   }
 
   if (!analyzing) {
     if (!envQuality) {
-      return { mode: 'setup', title: '正在看鏡頭', body: '請站到鏡頭前，讓全身入鏡。', action: null, tone: 'neutral' }
+      return { mode: 'setup', title: '正在看鏡頭', body: '請走到椅子位置，讓頭、身體和膝蓋都入鏡。', action: null, tone: 'neutral' }
     }
     if (envQuality.personMissing) {
-      return { mode: 'realign', title: '請回到鏡頭中央', body: '頭、身體和膝蓋都要在畫面裡。', action: 'realign', tone: 'warning' }
+      return { mode: 'realign', title: '請回到鏡頭中央', body: '我還沒有看到完整身體，請再調整位置。', action: 'realign', tone: 'warning' }
     }
     if (!envQuality.ready) {
-      return { mode: 'setup', title: '調整拍攝位置', body: '退後一點、補光，讓身體完整入鏡。', action: null, tone: 'warning' }
+      return { mode: 'setup', title: '調整拍攝位置', body: '請讓全身入鏡並保持光線充足，準備好後會自動開始。', action: null, tone: 'warning' }
     }
-    return { mode: 'ready', title: '坐好後按開始', body: '雙腳踩地，背打直，我會提示你站起和坐下。', action: 'hold', tone: 'ready' }
+
+    return {
+      mode: 'ready',
+      title: autoStartCountdown === null ? '坐好後會自動開始' : `${autoStartCountdown} 秒後自動開始`,
+      body: '不用回來按開始。請坐穩、雙腳踩地，倒數完我會開始測驗。',
+      action: 'hold',
+      tone: 'ready',
+    }
   }
 
   if (snapshot.trackingQuality === 'lost') {
-    return { mode: 'realign', title: '回到鏡頭中央', body: '我看不到完整身體，請先站回畫面中間。', action: 'realign', tone: 'warning' }
+    return { mode: 'realign', title: '回到鏡頭中央', body: '我看不到完整身體，請先回到畫面中間。', action: 'realign', tone: 'warning' }
   }
 
   if (snapshot.nextAction === 'sit') {
@@ -367,6 +378,7 @@ export default function SessionPage() {
   const [completedSession, setCompletedSession] = useState<SessionEvent | null>(null)
   const [showCompletion, setShowCompletion] = useState(false)
   const [isSaved, setIsSaved] = useState(false)
+  const [autoStartCountdown, setAutoStartCountdown] = useState<number | null>(null)
   const [envQuality, setEnvQuality] = useState<EnvironmentQuality | null>(null)
   const [baseline, setBaseline] = useState(() => computePersonalBaseline(getSessions()))
 
@@ -392,11 +404,11 @@ export default function SessionPage() {
 
   const currentStatus = snapshot.trackingQuality === 'lost' && analyzing ? 'tracking-lost' : status
 
-  const requestFullscreen = () => {
+  const requestFullscreen = useCallback(() => {
     const el = containerRef.current ?? document.documentElement
     if (el.requestFullscreen) el.requestFullscreen().catch(() => {})
     else if ('webkitRequestFullscreen' in el) (el as HTMLElement & { webkitRequestFullscreen: () => void }).webkitRequestFullscreen()
-  }
+  }, [])
 
   const exitFullscreen = () => {
     if (document.exitFullscreen) document.exitFullscreen().catch(() => {})
@@ -464,6 +476,7 @@ export default function SessionPage() {
     setAnalyzing(false)
     setShowCompletion(false)
     setIsSaved(false)
+    setAutoStartCountdown(null)
     setStatus(cameraOn ? 'ready' : 'setup')
     setBaseline(computePersonalBaseline(getSessions()))
   }, [cameraOn])
@@ -496,12 +509,13 @@ export default function SessionPage() {
     if (granted) setSensorOn(true)
   }
 
-  const startTest = () => {
+  const startTest = useCallback(() => {
     analyzerRef.current.reset()
     coachRef.current.reset()
     lastRepCountRef.current = 0
     completionHandledRef.current = false
     lastCoachCueRef.current = ''
+    setAutoStartCountdown(null)
     setSnapshot(EMPTY_SNAPSHOT)
     setFused(EMPTY_FUSED)
     setCompletedSession(null)
@@ -510,10 +524,45 @@ export default function SessionPage() {
     setStatus('smooth')
     setAnalyzing(true)
     requestFullscreen()
-  }
+  }, [requestFullscreen])
+
+  const canAutoStart =
+    cameraOn &&
+    !analyzing &&
+    !showCompletion &&
+    snapshot.reps === 0 &&
+    envQuality?.ready === true
+
+  useEffect(() => {
+    if (!canAutoStart) {
+      const resetTimer = window.setTimeout(() => setAutoStartCountdown(null), 0)
+      return () => window.clearTimeout(resetTimer)
+    }
+
+    const primeTimer = window.setTimeout(() => {
+      setAutoStartCountdown((current) => current ?? AUTO_START_SECONDS)
+    }, 0)
+    const timer = window.setInterval(() => {
+      setAutoStartCountdown((current) => {
+        if (current === null) return AUTO_START_SECONDS
+        if (current <= 1) {
+          window.clearInterval(timer)
+          startTest()
+          return null
+        }
+        return current - 1
+      })
+    }, 1000)
+
+    return () => {
+      window.clearTimeout(primeTimer)
+      window.clearInterval(timer)
+    }
+  }, [canAutoStart, startTest])
 
   const stopTest = () => {
     setAnalyzing(false)
+    setAutoStartCountdown(null)
     coachRef.current.reset()
     setStatus(cameraOn ? 'ready' : 'setup')
   }
@@ -536,7 +585,7 @@ export default function SessionPage() {
   }, [currentStatus])
 
   const tiltForCanvas = analyzing ? snapshot.tiltSignedDeg : null
-  const coachCue = getCoachCue({ analyzing, cameraOn, envQuality, snapshot, showCompletion })
+  const coachCue = getCoachCueForDisplay({ analyzing, autoStartCountdown, cameraOn, envQuality, snapshot, showCompletion })
 
   useEffect(() => {
     if (!coachCue.action) return
