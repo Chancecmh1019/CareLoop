@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "Inter", system-ui, sans-serif;
+
+  --color-background: #F4EDE4;
+  --color-foreground: #1F2937;
+  --color-card: #FFFDF9;
+  --color-card-foreground: #1F2937;
+  --color-primary: #2D5F5D;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #EBE3D8;
+  --color-secondary-foreground: #1F2937;
+  --color-muted: #EBE3D8;
+  --color-muted-foreground: #6B7280;
+  --color-accent: #D5C9BB;
+  --color-accent-foreground: #1F2937;
+  --color-destructive: #DC2626;
+  --color-destructive-foreground: #FFFFFF;
+  --color-border: #D5C9BB;
+  --color-input: #D5C9BB;
+  --color-ring: #2D5F5D;
+  --radius: 0.5rem;
+
+  --color-status-stable: #2F855A;
+  --color-status-caution: #D97706;
+  --color-status-unstable: #DC2626;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body {
+    @apply overflow-x-hidden bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+  }
+
+  button,
+  a,
+  input,
+  textarea {
+    @apply focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/35;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* 隱藏 V0 或 Vercel 預覽模式下的浮動標籤，保持畫面整潔 */
+[data-vercel-edit-button],
+[data-vercel-toolbar],
+vercel-live-feedback,
+#v0-badge,
+.v0-badge,
+#v0-container {
+  display: none !important;
+}

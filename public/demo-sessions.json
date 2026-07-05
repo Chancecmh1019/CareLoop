@@ -1,0 +1,123 @@
+[
+  {
+    "id": "demo-day-0",
+    "timestamp": "2026-07-04T02:30:00.000Z",
+    "reps": 5,
+    "totalDurationSec": 14.2,
+    "avgDurationSec": 2.8,
+    "tiltMaxDeg": 6,
+    "instabilityEvents": 0,
+    "level": "smooth",
+    "trackingQuality": "good",
+    "notes": [
+      "本次 5 次坐站完成度良好，姿態與速度沒有明顯異常訊號。",
+      "CareLoop 僅提供居家動作觀察與照護提醒，不是醫療診斷。"
+    ]
+  },
+  {
+    "id": "demo-day-1",
+    "timestamp": "2026-07-03T01:45:00.000Z",
+    "reps": 5,
+    "totalDurationSec": 15.8,
+    "avgDurationSec": 3.2,
+    "tiltMaxDeg": 9,
+    "instabilityEvents": 0,
+    "level": "smooth",
+    "trackingQuality": "good",
+    "notes": [
+      "本次 5 次坐站完成度良好，姿態與速度沒有明顯異常訊號。",
+      "CareLoop 僅提供居家動作觀察與照護提醒，不是醫療診斷。"
+    ]
+  },
+  {
+    "id": "demo-day-2",
+    "timestamp": "2026-07-02T03:15:00.000Z",
+    "reps": 5,
+    "totalDurationSec": 17.5,
+    "avgDurationSec": 3.5,
+    "tiltMaxDeg": 11,
+    "instabilityEvents": 1,
+    "level": "attention",
+    "trackingQuality": "good",
+    "notes": [
+      "肩膀偏斜略高，建議家人陪同觀察動作是否穩定。",
+      "CareLoop 僅提供居家動作觀察與照護提醒，不是醫療診斷。"
+    ]
+  },
+  {
+    "id": "demo-day-3",
+    "timestamp": "2026-07-01T02:00:00.000Z",
+    "reps": 5,
+    "totalDurationSec": 22.1,
+    "avgDurationSec": 4.4,
+    "tiltMaxDeg": 20,
+    "instabilityEvents": 3,
+    "level": "review",
+    "trackingQuality": "good",
+    "notes": [
+      "偵測到明顯肩膀偏斜，建議下次測試時留意站起與坐下是否左右不平均。",
+      "測試中出現多次左右晃動事件，建議暫停並確認環境安全。",
+      "CareLoop 僅提供居家動作觀察與照護提醒，不是醫療診斷。"
+    ]
+  },
+  {
+    "id": "demo-day-4",
+    "timestamp": "2026-06-30T01:30:00.000Z",
+    "reps": 5,
+    "totalDurationSec": 18.3,
+    "avgDurationSec": 3.7,
+    "tiltMaxDeg": 13,
+    "instabilityEvents": 1,
+    "level": "attention",
+    "trackingQuality": "good",
+    "notes": [
+      "肩膀偏斜略高，建議家人陪同觀察動作是否穩定。",
+      "CareLoop 僅提供居家動作觀察與照護提醒，不是醫療診斷。"
+    ]
+  },
+  {
+    "id": "demo-day-5",
+    "timestamp": "2026-06-29T04:00:00.000Z",
+    "reps": 5,
+    "totalDurationSec": 13.8,
+    "avgDurationSec": 2.8,
+    "tiltMaxDeg": 7,
+    "instabilityEvents": 0,
+    "level": "smooth",
+    "trackingQuality": "good",
+    "notes": [
+      "本次 5 次坐站完成度良好，姿態與速度沒有明顯異常訊號。",
+      "CareLoop 僅提供居家動作觀察與照護提醒，不是醫療診斷。"
+    ]
+  },
+  {
+    "id": "demo-day-6",
+    "timestamp": "2026-06-28T02:45:00.000Z",
+    "reps": 5,
+    "totalDurationSec": 14.5,
+    "avgDurationSec": 2.9,
+    "tiltMaxDeg": 8,
+    "instabilityEvents": 0,
+    "level": "smooth",
+    "trackingQuality": "good",
+    "notes": [
+      "本次 5 次坐站完成度良好，姿態與速度沒有明顯異常訊號。",
+      "CareLoop 僅提供居家動作觀察與照護提醒，不是醫療診斷。"
+    ]
+  },
+  {
+    "id": "demo-day-7",
+    "timestamp": "2026-06-27T03:30:00.000Z",
+    "reps": 5,
+    "totalDurationSec": 15.0,
+    "avgDurationSec": 3.0,
+    "tiltMaxDeg": 9,
+    "instabilityEvents": 0,
+    "level": "smooth",
+    "trackingQuality": "poor",
+    "notes": [
+      "本次 5 次坐站完成度良好，姿態與速度沒有明顯異常訊號。",
+      "CareLoop 僅提供居家動作觀察與照護提醒，不是醫療診斷。"
+    ]
+  }
+]
