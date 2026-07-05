@@ -23,7 +23,7 @@ type PoseLandmarkerLike = {
   detectForVideo: (
     video: HTMLVideoElement,
     timestamp: number,
-  ) => { landmarks?: LandmarkLike[][] }
+  ) => { landmarks?: LandmarkLike[][]; worldLandmarks?: LandmarkLike[][] }
   close?: () => void
 }
 
@@ -85,8 +85,8 @@ function drawGuidanceOverlay(
 ) {
   if (tiltDeg === null || tiltDeg === undefined) return
 
-  const TILT_MILD = 8
-  const TILT_SEVERE = 15
+  const TILT_MILD = 12
+  const TILT_SEVERE = 25
   const absTilt = Math.abs(tiltDeg)
 
   if (absTilt < TILT_MILD) {
@@ -311,7 +311,6 @@ export function PoseCanvas({
         drawCenterLine(ctx, width, height, trackingQualityRef.current)
         // 2. 骨架
         if (landmarks) drawSkeleton(ctx, landmarks, width, height)
-        if (landmarks) drawGuidanceOverlay(ctx, landmarks, width, height, shoulderTiltDegRef.current)
         // 3. 引導箭頭（最上層）
         if (landmarks) drawGuidanceOverlay(ctx, landmarks, width, height, shoulderTiltDegRef.current)
       }

@@ -204,7 +204,7 @@ export function answerFamilyQuestion(question: string, sessions: SessionEvent[])
   if (lower.includes('偏斜') || lower.includes('左右') || lower.includes('歪') ||
       lower.includes('傾斜') || lower.includes('平衡') || lower.includes('肩膀')) {
     return `偏斜最嚴重的是 ${formatSessionDate(tiltMax.timestamp)}，最大肩膀偏斜 ${tiltMax.tiltMaxDeg.toFixed(0)} 度（狀態：「${levelLabel(tiltMax.level)}」）。` +
-      `最新一次偏斜 ${latest.tiltMaxDeg.toFixed(0)} 度。若連續偏斜超過 10 度，建議觀察是否固定往同一側傾斜並諮詢專業人員。`
+      `最新一次偏斜 ${latest.tiltMaxDeg.toFixed(0)} 度。若連續偏斜超過 20 度，建議觀察是否固定往同一側傾斜並諮詢專業人員。`
   }
 
   // ── 不穩定查詢 ────────────────────────────────────────────

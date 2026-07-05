@@ -394,8 +394,8 @@ add_heading(doc, '5.1 觀察閾值設定依據', 2)
 thresholds = [
     ('SLOW_AVG_SEC = 2.4s/次（總計 12s）', 'Bohannon（2006）60–69 歲族群規範均值偏慢截斷點 → 觸發 attention'),
     ('VERY_SLOW_AVG_SEC = 3.34s/次（總計 16.7s）', '超過 60–69 歲均值 +2SD → 觸發 review'),
-    ('MAX_TILT_DEG_ATTENTION = 10°', '臨床觀察建議，>10° 開始介入 → 觸發 attention'),
-    ('MAX_TILT_DEG_REVIEW = 18°', '明顯異常值，>18° → 觸發 review'),
+    ('MAX_TILT_DEG_ATTENTION = 20°', '居家攝影機容錯後，≥20° 才觸發 attention'),
+    ('MAX_TILT_DEG_REVIEW = 35°', '明顯持續偏移，≥35° 才觸發 review'),
     ('INSTABILITY_X_JUMP = 0.08', '髖部 x 座標幀間跳動閾值，用於計算晃動事件'),
     ('swayConfidence ≥ 0.7', '雙模態融合確認晃動，強化 review 判定'),
 ]
@@ -414,7 +414,7 @@ add_heading(doc, '5.2 決策流程（evaluateSession 函式）', 2)
 decision_steps = [
     '檢查 reps < 5 → review（資料不完整）',
     '檢查 trackingQuality === \'lost\' → review（追蹤中斷）',
-    '檢查 tiltMaxDeg ≥ 18° → review / ≥ 10° → attention',
+    '檢查 tiltMaxDeg ≥ 35° → review / ≥ 20° → attention',
     '檢查 swayConfidence ≥ 0.7（雙模態確認）→ review（強化晃動判定）',
     '檢查 instabilityEvents ≥ 2 → review / === 1 且 smooth → attention',
     '檢查 avgDurationSec > 3.34s → review / > 2.4s 且 smooth → attention',

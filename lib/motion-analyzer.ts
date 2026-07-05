@@ -155,6 +155,11 @@ export function createMotionAnalyzer() {
   let tiltMaxDeg = 0
   // tiltSignedDeg stores the signed value of the LATEST frame (for arrow direction)
   let tiltSignedDeg = 0
+  let neutralTiltDeg: number | null = null
+  let neutralTiltSampleCount = 0
+  let neutralTiltSum = 0
+  let tiltSpikeCandidateDeg = 0
+  let tiltSpikeCandidateFrames = 0
   let instabilityEvents = 0
   let latestMetric: FrameMetric | null = null
   let trackingQuality: TrackingQuality = 'lost'
@@ -170,6 +175,10 @@ export function createMotionAnalyzer() {
   // calibrate while standing.
   const CALIBRATION_FRAMES = 10   // ~0.33 s at 30 fps
   const CALIBRATION_SIT_THRESHOLD = 0.20
+  const MIN_TILT_BASELINE_FRAMES = 5
+  const TILT_DEADBAND_DEG = 1.5
+  const TILT_SINGLE_FRAME_SPIKE_DEG = 10
+  const TILT_SPIKE_CONFIRM_FRAMES = 3
   let sittingFrameCount = 0
   let calibrationHipYSum = 0
   let calibrationLegExtensionSum = 0
@@ -196,6 +205,11 @@ export function createMotionAnalyzer() {
     completedAtMs = null
     tiltMaxDeg = 0
     tiltSignedDeg = 0
+    neutralTiltDeg = null
+    neutralTiltSampleCount = 0
+    neutralTiltSum = 0
+    tiltSpikeCandidateDeg = 0
+    tiltSpikeCandidateFrames = 0
     instabilityEvents = 0
     latestMetric = null
     trackingQuality = 'lost'
@@ -211,6 +225,38 @@ export function createMotionAnalyzer() {
     hipXFilter.reset()
     legExtensionFilter.reset()
     tiltFilter.reset()
+  }
+
+  function resetTiltSpikeCandidate() {
+    tiltSpikeCandidateDeg = 0
+    tiltSpikeCandidateFrames = 0
+  }
+
+  function trackTiltMax(correctedTiltDeg: number) {
+    const absTilt = Math.abs(correctedTiltDeg)
+    if (absTilt <= tiltMaxDeg) {
+      resetTiltSpikeCandidate()
+      return
+    }
+
+    const jump = absTilt - tiltMaxDeg
+    if (jump <= TILT_SINGLE_FRAME_SPIKE_DEG) {
+      tiltMaxDeg = absTilt
+      resetTiltSpikeCandidate()
+      return
+    }
+
+    if (Math.abs(absTilt - tiltSpikeCandidateDeg) <= 4) {
+      tiltSpikeCandidateFrames += 1
+    } else {
+      tiltSpikeCandidateDeg = absTilt
+      tiltSpikeCandidateFrames = 1
+    }
+
+    if (tiltSpikeCandidateFrames >= TILT_SPIKE_CONFIRM_FRAMES) {
+      tiltMaxDeg = tiltSpikeCandidateDeg
+      resetTiltSpikeCandidate()
+    }
   }
 
   function getSnapshot(): MotionSnapshot {
@@ -309,10 +355,7 @@ export function createMotionAnalyzer() {
       }
     }
     const smoothedTilt = rawTilt !== null ? tiltFilter.update(rawTilt) : null
-
-    if (smoothedTilt !== null) {
-      tiltSignedDeg = smoothedTilt
-    }
+    let correctedTilt: number | null = null
 
     let motionState: MotionState = 'unknown'
     if (trackingQuality === 'lost' || hipY === null) {
@@ -326,14 +369,24 @@ export function createMotionAnalyzer() {
           sittingFrameCount++
           calibrationHipYSum += hipY
           calibrationLegExtensionSum += legExtension ?? 0
+          if (smoothedTilt !== null && trackingQuality === 'good' && Math.abs(smoothedTilt) <= 45) {
+            neutralTiltSampleCount += 1
+            neutralTiltSum += smoothedTilt
+          }
           if (sittingFrameCount >= CALIBRATION_FRAMES) {
             seatedHipY = calibrationHipYSum / sittingFrameCount
             seatedLegExtension = calibrationLegExtensionSum / sittingFrameCount
+            neutralTiltDeg =
+              neutralTiltSampleCount >= MIN_TILT_BASELINE_FRAMES
+                ? neutralTiltSum / neutralTiltSampleCount
+                : smoothedTilt ?? 0
           }
         } else {
           sittingFrameCount = 1
           calibrationHipYSum = hipY
           calibrationLegExtensionSum = legExtension ?? 0
+          neutralTiltSampleCount = smoothedTilt !== null && trackingQuality === 'good' ? 1 : 0
+          neutralTiltSum = smoothedTilt !== null && trackingQuality === 'good' ? smoothedTilt : 0
         }
         motionState = 'unknown'   // still calibrating
       } else {
@@ -398,6 +451,12 @@ export function createMotionAnalyzer() {
 
     previousHipYForStability = hipY
 
+    if (smoothedTilt !== null && neutralTiltDeg !== null) {
+      const rawCorrectedTilt = smoothedTilt - neutralTiltDeg
+      correctedTilt = Math.abs(rawCorrectedTilt) < TILT_DEADBAND_DEG ? 0 : rawCorrectedTilt
+      tiltSignedDeg = correctedTilt
+    }
+
     // ── Instability detection: hipX lateral jump ──────────────────
     if (hipX !== null && previousHipX !== null && Math.abs(hipX - previousHipX) > MOTION_THRESHOLDS.INSTABILITY_X_JUMP) {
       // Only count instability if we are actually tracking a known state
@@ -409,8 +468,8 @@ export function createMotionAnalyzer() {
 
     // ── Track tiltMaxDeg ONLY during valid test phases ────────────
     // Exclude 'unknown' (calibration/walking in) to prevent noisy spikes from ruining the session max.
-    if (motionState !== 'unknown' && trackingQuality !== 'lost' && smoothedTilt !== null) {
-      tiltMaxDeg = Math.max(tiltMaxDeg, Math.abs(smoothedTilt))
+    if (motionState !== 'unknown' && trackingQuality !== 'lost' && correctedTilt !== null) {
+      trackTiltMax(correctedTilt)
     }
 
     // ── State machine ─────────────────────────────────────────────
@@ -459,7 +518,7 @@ export function createMotionAnalyzer() {
       hipY,
       hipX,
       // Store the SIGNED value so PoseCanvas can determine arrow direction
-      shoulderTiltDeg: smoothedTilt,
+      shoulderTiltDeg: correctedTilt,
       visibilityAvg,
       motionState,
     }

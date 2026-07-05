@@ -221,8 +221,8 @@ export default function FamilyPage() {
               icon: Activity,
               label: '偏斜角度',
               value: `${latest!.tiltMaxDeg.toFixed(0)}°`,
-              sub: '建議 < 10°',
-              warn: latest!.tiltMaxDeg >= 10,
+              sub: '留意 ≥ 20°',
+              warn: latest!.tiltMaxDeg >= 20,
             },
             {
               icon: AlertTriangle,

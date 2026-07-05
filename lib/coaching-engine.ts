@@ -27,8 +27,8 @@ const COACHING_SPEECH: Record<CoachingEvent, string> = {
 }
 
 const THRESHOLDS = {
-  TILT_MILD_DEG: 8,
-  TILT_SEVERE_DEG: 15,
+  TILT_MILD_DEG: 12,
+  TILT_SEVERE_DEG: 25,
   SWAY_MS2: 1.5,
   TOO_FAST_SEC: 1.2,
   COOLDOWN_MS: 4000,

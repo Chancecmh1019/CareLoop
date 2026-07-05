@@ -57,12 +57,12 @@ const GT = {
   UNSTABLE_TOTAL_SEC: 16.7,
   // >12s = 比 60-69yo 平均差 → 留意 → caution
   CAUTION_TOTAL_SEC: 12.0,
-  // 偏斜角度（對應 MOTION_THRESHOLDS）
-  TILT_CAUTION: 10,
-  TILT_UNSTABLE: 18,
-  // 晃動事件
-  SWAY_CAUTION: 1,
-  SWAY_UNSTABLE: 2,
+  // 偏斜角度（居家攝影機版本，對應 MOTION_THRESHOLDS）
+  TILT_CAUTION: 20,
+  TILT_UNSTABLE: 35,
+  // 晃動事件（需要多次或雙模態確認才升級）
+  SWAY_CAUTION: 2,
+  SWAY_UNSTABLE: 5,
 }
 
 export interface SyntheticPatient {
