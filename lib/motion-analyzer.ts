@@ -16,6 +16,9 @@ const LEFT_HIP = 23
 const RIGHT_HIP = 24
 const LEFT_KNEE = 25
 const RIGHT_KNEE = 26
+const LEFT_ANKLE = 27
+const RIGHT_ANKLE = 28
+const NOSE = 0
 
 // ─── EMA smoother ───────────────────────────────────────────────
 // Reduces frame-to-frame jitter without adding lag
@@ -37,6 +40,7 @@ function average(values: number[]) {
 }
 
 function visibilityOf(point?: LandmarkLike) {
+  if (!point) return 0
   return typeof point?.visibility === 'number' ? point.visibility : 0.8
 }
 
@@ -103,17 +107,55 @@ function calcTrunkLateralDeg3D(
   return angleDeg - 90
 }
 
+function calcJointAngleDeg(a: LandmarkLike | undefined, b: LandmarkLike | undefined, c: LandmarkLike | undefined): number | null {
+  if (!a || !b || !c) return null
+
+  const ab = {
+    x: a.x - b.x,
+    y: a.y - b.y,
+    z: (a.z ?? 0) - (b.z ?? 0),
+  }
+  const cb = {
+    x: c.x - b.x,
+    y: c.y - b.y,
+    z: (c.z ?? 0) - (b.z ?? 0),
+  }
+  const dot = ab.x * cb.x + ab.y * cb.y + ab.z * cb.z
+  const magAb = Math.sqrt(ab.x * ab.x + ab.y * ab.y + ab.z * ab.z)
+  const magCb = Math.sqrt(cb.x * cb.x + cb.y * cb.y + cb.z * cb.z)
+  if (magAb === 0 || magCb === 0) return null
+
+  const cosTheta = dot / (magAb * magCb)
+  return Math.acos(Math.max(-1, Math.min(1, cosTheta))) * (180 / Math.PI)
+}
+
+function averageKneeAngle(landmarks: LandmarkLike[] | undefined): number | null {
+  if (!landmarks) return null
+  const left = calcJointAngleDeg(landmarks[LEFT_HIP], landmarks[LEFT_KNEE], landmarks[LEFT_ANKLE])
+  const right = calcJointAngleDeg(landmarks[RIGHT_HIP], landmarks[RIGHT_KNEE], landmarks[RIGHT_ANKLE])
+  const values = [left, right].filter((value): value is number => value !== null && Number.isFinite(value))
+  return values.length > 0 ? average(values) : null
+}
+
 export function checkEnvironment(landmarks: LandmarkLike[] | undefined, videoWidth: number, videoHeight: number): EnvironmentQuality {
   if (!landmarks || landmarks.length === 0) {
-    return { lighting: 'poor', distance: 'good', angle: 'good', ready: false, personMissing: true }
+    return { lighting: 'poor', distance: 'good', angle: 'good', ready: false, personMissing: true, bodyIncomplete: true }
   }
 
-  const visibilityAvg = average([
-    visibilityOf(landmarks[LEFT_SHOULDER]),
-    visibilityOf(landmarks[RIGHT_SHOULDER]),
-    visibilityOf(landmarks[LEFT_HIP]),
-    visibilityOf(landmarks[RIGHT_HIP]),
-  ])
+  const requiredLandmarks = [
+    landmarks[NOSE],
+    landmarks[LEFT_SHOULDER],
+    landmarks[RIGHT_SHOULDER],
+    landmarks[LEFT_HIP],
+    landmarks[RIGHT_HIP],
+    landmarks[LEFT_KNEE],
+    landmarks[RIGHT_KNEE],
+    landmarks[LEFT_ANKLE],
+    landmarks[RIGHT_ANKLE],
+  ]
+
+  const visibilityAvg = average(requiredLandmarks.map(visibilityOf))
+  const bodyIncomplete = requiredLandmarks.some((point) => visibilityOf(point) < 0.35)
 
   const hipY = average([landmarks[LEFT_HIP].y, landmarks[RIGHT_HIP].y])
 
@@ -125,23 +167,33 @@ export function checkEnvironment(landmarks: LandmarkLike[] | undefined, videoWid
   // Express as a proportion of the smaller dimension (usually width on mobile, height on desktop)
   const minDimension = Math.min(videoWidth, videoHeight)
   const shoulderWidth = minDimension > 0 ? shoulderWidthPx / minDimension : 0
+  const visiblePoints = requiredLandmarks.filter((point): point is LandmarkLike => Boolean(point))
+  const minY = Math.min(...visiblePoints.map((point) => point.y))
+  const maxY = Math.max(...visiblePoints.map((point) => point.y))
+  const bodyHeight = maxY - minY
 
   const lighting = visibilityAvg > 0.7 ? 'good' : 'poor'
-  const distance = shoulderWidth > 0.35 ? 'tooClose' : shoulderWidth < 0.08 ? 'tooFar' : 'good'
-  const angle = hipY < 0.3 ? 'tooHigh' : hipY > 0.9 ? 'tooLow' : 'good'
+  const distance = shoulderWidth > 0.35 || bodyHeight > 0.94
+    ? 'tooClose'
+    : shoulderWidth < 0.055 || bodyHeight < 0.42
+      ? 'tooFar'
+      : 'good'
+  const angle = minY < 0.02 ? 'tooHigh' : hipY > 0.9 || maxY > 0.98 ? 'tooLow' : 'good'
 
   return {
     lighting,
     distance,
     angle,
-    ready: lighting === 'good' && distance === 'good' && angle === 'good',
+    ready: lighting === 'good' && distance === 'good' && angle === 'good' && !bodyIncomplete,
     personMissing: false,
+    bodyIncomplete,
   }
 }
 
 export function createMotionAnalyzer() {
   let seatedHipY: number | null = null
   let seatedLegExtension: number | null = null
+  let seatedKneeAngle: number | null = null
   let previousHipX: number | null = null
   let previousState: MotionState = 'unknown'
   let stateSince = 0
@@ -182,6 +234,8 @@ export function createMotionAnalyzer() {
   let sittingFrameCount = 0
   let calibrationHipYSum = 0
   let calibrationLegExtensionSum = 0
+  let calibrationKneeAngleSum = 0
+  let calibrationKneeAngleCount = 0
   let lowerBaselineCount = 0
   let previousHipYForStability: number | null = null
 
@@ -194,6 +248,7 @@ export function createMotionAnalyzer() {
   function reset() {
     seatedHipY = null
     seatedLegExtension = null
+    seatedKneeAngle = null
     previousHipX = null
     previousState = 'unknown'
     stateSince = 0
@@ -216,6 +271,8 @@ export function createMotionAnalyzer() {
     sittingFrameCount = 0
     calibrationHipYSum = 0
     calibrationLegExtensionSum = 0
+    calibrationKneeAngleSum = 0
+    calibrationKneeAngleCount = 0
     lowerBaselineCount = 0
     previousHipYForStability = null
     standingConfirmedAtMs = null
@@ -316,6 +373,8 @@ export function createMotionAnalyzer() {
       landmarks[RIGHT_HIP],
       landmarks[LEFT_KNEE],
       landmarks[RIGHT_KNEE],
+      landmarks[LEFT_ANKLE],
+      landmarks[RIGHT_ANKLE],
     ]
     const visibilityAvg = average(points.map(visibilityOf))
     trackingQuality = classifyTracking(visibilityAvg)
@@ -331,6 +390,7 @@ export function createMotionAnalyzer() {
     const rightKnee = landmarks[RIGHT_KNEE]
     const rawKneeY = leftKnee && rightKnee ? average([leftKnee.y, rightKnee.y]) : null
     const rawLegExtension = rawHipY !== null && rawKneeY !== null ? rawKneeY - rawHipY : null
+    const rawKneeAngle = averageKneeAngle(worldLandmarks) ?? averageKneeAngle(landmarks)
 
     // Apply EMA smoothing to reduce jitter
     const hipY = rawHipY !== null ? hipYFilter.update(rawHipY) : null
@@ -369,6 +429,10 @@ export function createMotionAnalyzer() {
           sittingFrameCount++
           calibrationHipYSum += hipY
           calibrationLegExtensionSum += legExtension ?? 0
+          if (rawKneeAngle !== null) {
+            calibrationKneeAngleSum += rawKneeAngle
+            calibrationKneeAngleCount += 1
+          }
           if (smoothedTilt !== null && trackingQuality === 'good' && Math.abs(smoothedTilt) <= 45) {
             neutralTiltSampleCount += 1
             neutralTiltSum += smoothedTilt
@@ -376,6 +440,9 @@ export function createMotionAnalyzer() {
           if (sittingFrameCount >= CALIBRATION_FRAMES) {
             seatedHipY = calibrationHipYSum / sittingFrameCount
             seatedLegExtension = calibrationLegExtensionSum / sittingFrameCount
+            seatedKneeAngle = calibrationKneeAngleCount > 0
+              ? calibrationKneeAngleSum / calibrationKneeAngleCount
+              : null
             neutralTiltDeg =
               neutralTiltSampleCount >= MIN_TILT_BASELINE_FRAMES
                 ? neutralTiltSum / neutralTiltSampleCount
@@ -385,6 +452,8 @@ export function createMotionAnalyzer() {
           sittingFrameCount = 1
           calibrationHipYSum = hipY
           calibrationLegExtensionSum = legExtension ?? 0
+          calibrationKneeAngleSum = rawKneeAngle ?? 0
+          calibrationKneeAngleCount = rawKneeAngle !== null ? 1 : 0
           neutralTiltSampleCount = smoothedTilt !== null && trackingQuality === 'good' ? 1 : 0
           neutralTiltSum = smoothedTilt !== null && trackingQuality === 'good' ? smoothedTilt : 0
         }
@@ -398,6 +467,12 @@ export function createMotionAnalyzer() {
             : 0
         const standingByHip = hipRiseFromSeat >= MOTION_THRESHOLDS.STAND_DELTA_Y
         const standingByLeg = legExtensionRise >= MOTION_THRESHOLDS.LEG_EXTENSION_DELTA_Y
+        const standingByKnee =
+          rawKneeAngle !== null &&
+          (
+            rawKneeAngle >= 160 ||
+            (seatedKneeAngle !== null && rawKneeAngle - seatedKneeAngle >= 35)
+          )
         const seatedByHip = sawStanding
           ? hipY >= seatedHipY - MOTION_THRESHOLDS.SITTING_TOLERANCE_Y
           : Math.abs(hipY - seatedHipY) <= MOTION_THRESHOLDS.SITTING_TOLERANCE_Y
@@ -405,13 +480,17 @@ export function createMotionAnalyzer() {
           seatedLegExtension !== null &&
           legExtension !== null &&
           legExtension <= seatedLegExtension + MOTION_THRESHOLDS.LEG_EXTENSION_SITTING_TOLERANCE_Y
+        const seatedByKnee =
+          rawKneeAngle !== null &&
+          seatedKneeAngle !== null &&
+          rawKneeAngle <= seatedKneeAngle + 18
 
-        if (standingByHip || standingByLeg) {
+        if (standingByHip || standingByLeg || standingByKnee) {
           motionState = 'standing'
           lowestHipYDuringStand = lowestHipYDuringStand === null ? hipY : Math.min(lowestHipYDuringStand, hipY)
           seatedCandidateCount = 0
           lowerBaselineCount = 0
-        } else if (seatedByHip || seatedByLeg) {
+        } else if (seatedByHip || seatedByLeg || seatedByKnee) {
           motionState = 'sitting'
           seatedCandidateCount += 1
           lowerBaselineCount = 0
@@ -504,6 +583,9 @@ export function createMotionAnalyzer() {
           seatedLegExtension = legExtension <= seatedLegExtension + MOTION_THRESHOLDS.LEG_EXTENSION_SITTING_TOLERANCE_Y
             ? seatedLegExtension * 0.7 + legExtension * 0.3
             : seatedLegExtension
+        }
+        if (rawKneeAngle !== null && seatedKneeAngle !== null && rawKneeAngle <= seatedKneeAngle + 20) {
+          seatedKneeAngle = seatedKneeAngle * 0.7 + rawKneeAngle * 0.3
         }
         if (reps >= MOTION_THRESHOLDS.TARGET_REPS) completedAtMs = timestampMs
         // Record when we settled back to sitting for rest-between-reps pacing

@@ -5,6 +5,9 @@ import { Camera, Loader2 } from 'lucide-react'
 import type { LandmarkLike, MotionSnapshot } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
+const MEDIAPIPE_WASM_PATH = '/mediapipe/wasm'
+const POSE_MODEL_PATH = '/mediapipe/models/pose_landmarker_lite.task'
+
 interface PoseCanvasProps {
   active: boolean
   analyzing: boolean
@@ -230,14 +233,13 @@ export function PoseCanvas({
 
         const tasksVision = await import('@mediapipe/tasks-vision')
         const vision = await tasksVision.FilesetResolver.forVisionTasks(
-          'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm',
+          MEDIAPIPE_WASM_PATH,
         )
         let landmarker
         try {
           landmarker = await tasksVision.PoseLandmarker.createFromOptions(vision, {
             baseOptions: {
-              modelAssetPath:
-                'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+              modelAssetPath: POSE_MODEL_PATH,
               delegate: 'GPU',
             },
             runningMode: 'VIDEO',
@@ -247,8 +249,7 @@ export function PoseCanvas({
           console.warn('GPU initialization failed, falling back to CPU:', err)
           landmarker = await tasksVision.PoseLandmarker.createFromOptions(vision, {
             baseOptions: {
-              modelAssetPath:
-                'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+              modelAssetPath: POSE_MODEL_PATH,
               delegate: 'CPU',
             },
             runningMode: 'VIDEO',

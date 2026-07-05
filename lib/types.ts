@@ -74,7 +74,7 @@ export interface TrendSummary {
   latestLevel: ObservationLevel | null
   avgDurationSec: number | null
   totalInstabilityEvents: number
-  cautionOrUnstableCount: number
+  attentionOrReviewCount: number
   narrative: string
 }
 
@@ -91,6 +91,7 @@ export interface EnvironmentQuality {
   angle: 'tooHigh' | 'tooLow' | 'good'
   ready: boolean
   personMissing?: boolean
+  bodyIncomplete?: boolean
 }
 
 export interface MotionSnapshot {

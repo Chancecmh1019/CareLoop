@@ -30,13 +30,13 @@ function kappaBadge(k: number) {
   if (k >= 0.41) return { label: '中度一致', color: '#D97706' }
   return { label: '尚可一致', color: '#6B7280' }
 }
-const RISK_ZH: Record<string, string> = {
+const LEVEL_ZH: Record<string, string> = {
   smooth: '動作順暢', attention: '略有偏移', review: '建議確認',
 }
-const RISK_COLOR: Record<string, string> = {
+const LEVEL_COLOR: Record<string, string> = {
   smooth: '#2F855A', attention: '#D97706', review: '#C53030',
 }
-const RISK_BG: Record<string, string> = {
+const LEVEL_BG: Record<string, string> = {
   smooth: '#F0FFF4', attention: '#FFFBEB', review: '#FFF5F5',
 }
 
@@ -138,7 +138,7 @@ function AgeNormChart() {
                 className="absolute top-0 h-full w-0.5 bg-[#D97706] opacity-70"
                 style={{ left: `${(12 / maxMean) * 100}%` }}
               />
-              {/* Unstable threshold (16.7s) */}
+              {/* Clearly slow threshold (16.7s) */}
               <div
                 className="absolute top-0 h-full w-0.5 bg-[#C53030] opacity-70"
                 style={{ left: `${(16.7 / maxMean) * 100}%` }}
@@ -150,7 +150,7 @@ function AgeNormChart() {
           {[
             { color: '#2D5F5D', label: '規範均值 ± SD' },
             { color: '#D97706', label: '留意閾值（12s）' },
-            { color: '#C53030', label: '高風險閾值（16.7s）' },
+            { color: '#C53030', label: '明顯偏慢閾值（16.7s）' },
           ].map(({ color, label }) => (
             <div key={label} className="flex items-center gap-1">
               <div className="h-2 w-2 rounded-full" style={{ background: color }} />
@@ -206,7 +206,7 @@ export default function ValidationPage() {
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#D97706]/30 bg-[#FEF9EE] px-3 py-1.5 text-xs font-bold text-[#D97706]">
               <ShieldCheck className="h-3.5 w-3.5" />
-              誠實揭露侷限，不假裝 FDA 認可
+              誠實揭露侷限，不宣稱法規認可
             </span>
           </div>
           <h1 className="text-2xl font-black text-[#1F2937] sm:text-3xl">
@@ -352,17 +352,17 @@ export default function ValidationPage() {
               <div className="rounded-xl border border-[#D5C9BB] bg-[#FFFDF9] p-5">
                 <p className="mb-4 text-xs font-black text-[#1F2937]">分類指標（Per-Class Metrics）</p>
                 <div className="space-y-3">
-                  {(['smooth', 'attention', 'review'] as const).map(risk => {
-                    const cls = m.perClass[risk]
+                  {(['smooth', 'attention', 'review'] as const).map(level => {
+                    const cls = m.perClass[level]
                     return (
                       <div
-                        key={risk}
+                        key={level}
                         className="rounded-lg p-3"
-                        style={{ background: RISK_BG[risk] }}
+                        style={{ background: LEVEL_BG[level] }}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-black" style={{ color: RISK_COLOR[risk] }}>
-                            {RISK_ZH[risk]}
+                          <span className="text-xs font-black" style={{ color: LEVEL_COLOR[level] }}>
+                            {LEVEL_ZH[level]}
                           </span>
                           <span className="text-[10px] text-[#6B7280]">
                             Support: {cls.support}
@@ -375,7 +375,7 @@ export default function ValidationPage() {
                             { label: 'F1', value: cls.f1 },
                           ].map(({ label, value }) => (
                             <div key={label}>
-                              <div className="text-sm font-black tabular-nums" style={{ color: RISK_COLOR[risk] }}>
+                              <div className="text-sm font-black tabular-nums" style={{ color: LEVEL_COLOR[level] }}>
                                 {pct(value)}
                               </div>
                               <div className="text-[10px] text-[#6B7280]">{label}</div>
@@ -508,7 +508,7 @@ export default function ValidationPage() {
                   </p>
                   <p>
                     A: 這是一個已知的局限性，我們在文件中明確聲明（見 docs/validation-benchmark.md）。
-                    我們的 In Silico 驗證族群基於 Bohannon 2006 的「功能性長輩」常模分佈，
+                    我們的參數一致性測試基於 Bohannon 2006 的「功能性長輩」常模分佈，
                     確實不代表重度失能族群。然而，我們的個人化基準線設計在此有優勢：
                     對虛弱長輩來說，「他今天比自己的平均慢了 30%」比「他比全體平均慢了 40%」
                     更具有照護行動意義，因為它捕捉的是<strong>個人功能的相對下滑</strong>，而非與一般人群的絕對差距。
@@ -528,7 +528,7 @@ export default function ValidationPage() {
             <li>Bohannon, R.W. (2006). Reference values for the five-repetition sit-to-stand test. <em>J Strength Cond Res</em>, 20(4), 887–889.</li>
             <li>Whitney, S.L. et al. (2005). Clinical measurement of sit-to-stand performance. <em>Physical Therapy</em>, 85(10), 1034–1045.</li>
             <li>Meretta, B.M. et al. (2006). Five times sit to stand test: responsiveness. <em>J Geriatr Phys Ther</em>, 29(1), 3–8.</li>
-            <li>MDPI Sensors (2022). Validity and reliability of smartphone-based sit-to-stand analysis. <em>Sensors</em>, 22(3), 1113. — ICC &gt; 0.90 for visual-skeleton method in self-administration.</li>
+            <li>單手機/單鏡頭動作分析相關研究顯示，姿態估計若搭配校準、濾波與明確的測試流程，適合做早期功能觀察；CareLoop 仍需後續真人一致性研究驗證。</li>
             <li>Perera, S. et al. (2006). Meaningful change and responsiveness in common physical performance measures. <em>Physical Therapy</em>, 86(11), 1516–1523. — 個人 MDC 概念基礎。</li>
             <li>Studenski, S. et al. (2011). Gait speed and survival in older adults. <em>JAMA</em>, 305(1), 50–58. — 個人內變異比群體比較更具預測力。</li>
           </ol>

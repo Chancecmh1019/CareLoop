@@ -194,6 +194,9 @@ function getCoachCueForDisplay({
     if (envQuality.personMissing) {
       return { mode: 'realign', title: '請回到鏡頭中央', body: '我還沒有看到完整身體，請再調整位置。', action: 'realign', tone: 'warning' }
     }
+    if (envQuality.bodyIncomplete) {
+      return { mode: 'realign', title: '請讓全身入鏡', body: '我需要看見頭、身體、膝蓋和腳踝，才能準確開始測驗。', action: 'realign', tone: 'warning' }
+    }
     if (!envQuality.ready) {
       return { mode: 'setup', title: '調整拍攝位置', body: '請讓全身入鏡並保持光線充足，準備好後會自動開始。', action: null, tone: 'warning' }
     }

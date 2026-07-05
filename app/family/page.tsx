@@ -292,12 +292,12 @@ export default function FamilyPage() {
                   contentStyle={{ borderRadius: '8px', border: '1px solid #D5C9BB', backgroundColor: '#FFFDF9', fontSize: 12 }}
                   formatter={(v: number) => [`${v.toFixed(2)}s`, '平均耗時']}
                 />
-                {/* 文獻高風險線 */}
+                {/* 文獻明顯偏慢線 */}
                 <ReferenceLine
                   y={3.34}
                   stroke="#DC2626"
                   strokeDasharray="4 4"
-                  label={{ value: '文獻高風險線 3.34s', position: 'right', fontSize: 9, fill: '#DC2626' }}
+                  label={{ value: '文獻明顯偏慢線 3.34s', position: 'right', fontSize: 9, fill: '#DC2626' }}
                 />
                 {/* 個人基準線 */}
                 {baseline.isReady && baseline.avgDuration && (

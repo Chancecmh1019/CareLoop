@@ -72,6 +72,16 @@ npm run dev
 
 開啟 `http://localhost:3000`。若要使用攝影機，請在 `localhost` 或 HTTPS 環境執行。
 
+### 拍攝成功條件
+
+測試頁會在以下條件都成立時才允許開始或自動倒數：
+
+- 瀏覽器已授權攝影機，且 video stream 正常播放。
+- MediaPipe WASM 與 Pose Landmarker Lite 模型已從本機 `/mediapipe` 載入。
+- 使用者的頭、肩膀、髖部、膝蓋與腳踝都在畫面中且可見度足夠。
+- 鏡頭正對椅子，距離約 2–3 公尺，避免背光或半身入鏡。
+- 初始坐姿穩定後，系統會建立坐姿與偏斜中立基準，再開始計數。
+
 ### 程式碼品質驗證
 
 ```bash
@@ -117,7 +127,7 @@ CareLoop 是居家動作觀察與照護提醒工具，**不是醫療診斷產品
 ## 已知限制
 
 - 所有資料只存在使用者自己的瀏覽器 localStorage，無後端或雲端同步
-- MediaPipe 模型首次載入需要網路（WASM 約 10MB）
+- MediaPipe WASM 與 Pose Landmarker Lite 模型已放在 `public/mediapipe`，拍攝測試不依賴外部 CDN
 - 姿態判斷是 rule-based 居家觀察邏輯，不適合作為臨床判斷依據
 - 光線不足時視覺模態 SNR 下降，系統自動降級並提示調整擺位
 - iOS Safari 需要額外授權才能使用 DeviceMotionEvent

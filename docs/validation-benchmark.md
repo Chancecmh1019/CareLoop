@@ -59,22 +59,24 @@ CareLoop 使用瀏覽器端 `performance.now()` 計時，解析度為 0.5ms（�
 
 ### 文獻基準
 
-**Google MediaPipe BlazePose（2020–2023 benchmark）**
-- 33 個骨架關鍵點，支援 3D 估計
-- COCO 基準資料集上骨架偵測準確率：> 90%（Full Body Keypoints）
-- 智慧型手機端即時推理，30fps 穩定執行
+**Google MediaPipe Pose Landmarker**
+- 官方輸出包含 33 個 normalized image landmarks 與 3D world landmarks。
+- `WorldLandmarks` 以髖部中點為原點、單位為公尺，較適合用於姿態幾何計算。
+- 瀏覽器版本可在本機以 WASM 執行，符合本專案「不錄影、不上傳」的隱私設計。
 
-**相關研究：Smartphone-based STS Analysis（MDPI Sensors, 2022）**
-- 使用智慧型手機影像分析坐站測試，與實驗室動作捕捉系統的相關性 *r > 0.90*
-- ICC 範圍：0.85–0.97
-- 絕對誤差百分比：< 6%
+**單鏡頭姿態估計相關研究**
+- BlazePose 論文指出該模型針對行動裝置即時人體姿態追蹤設計。
+- OpenCap Monocular（2026）示範單支智慧型手機影片可用於步態、深蹲與 sit-to-stand 等動作的 3D 運動學估計。
+- 這類研究支持「單鏡頭可作功能性動作觀察」的技術方向，但不等於 CareLoop 已完成臨床外部驗證。
 
 ### CareLoop 的實作
 
 CareLoop 的姿態偵測使用 MediaPipe `PoseLandmarker Lite`（WASM 版本，完全本機運算）。
-- 採用業界成熟的開源模型作為感知層基礎，減少從零訓練模型的風險，專注於動作特徵提取
-- 偏斜角度計算使用左右肩膀 x 座標差，當 `visibilityAvg < 0.55` 時自動降級，避免低品質幀誤判
-- GPU Delegate 優先啟動，失敗時自動降級至 CPU（`components/PoseCanvas.tsx`）
+- 採用業界成熟模型作為感知層基礎，減少從零訓練模型的風險，專注於動作特徵提取。
+- 偏斜角度優先使用 `worldLandmarks` 的 3D 肩膀/髖部幾何計算，並以初始坐姿建立個人中立偏角。
+- 坐站計次結合髖部高度、腿部伸展與膝關節角度訊號，降低單一 landmark 跳動造成的漏判。
+- 測試前環境檢查要求頭、肩、髖、膝與腳踝可見，避免半身入鏡就開始。
+- GPU Delegate 優先啟動，失敗時自動降級至 CPU（`components/PoseCanvas.tsx`）。
 
 ---
 
@@ -129,5 +131,6 @@ DeviceMotionEvent 取樣率：~60Hz（T_s = 16.7ms）
 2. Meretta, B.M. et al. (2006). The five times sit to stand test: responsiveness to change. *J Geriatr Phys Ther*, 29(1), 3–8.
 3. Whitney, S.L. et al. (2005). Clinical measurement of sit-to-stand performance. *Physical Therapy*, 85(10), 1034–1045.
 4. Google. (2020). BlazePose: On-device Real-time Body Pose Tracking. *arXiv:2006.10204*.
-5. MDPI Sensors (2022). Validity and reliability of smartphone-based sit-to-stand analysis. *Sensors*, 22(3), 1113.
-6. Portney, L.G., & Watkins, M.P. (2009). Foundations of Clinical Research (3rd ed.). Pearson.
+5. Google. MediaPipe Pose Landmarker Web documentation. `WorldLandmarks` output in 3D world coordinates.
+6. Gilon, S. et al. (2026). OpenCap Monocular: 3D Human Kinematics and Musculoskeletal Dynamics from a Single Smartphone Video. *arXiv:2603.24733*.
+7. Portney, L.G., & Watkins, M.P. (2009). Foundations of Clinical Research (3rd ed.). Pearson.

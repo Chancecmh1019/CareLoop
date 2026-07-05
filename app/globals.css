@@ -1,5 +1,44 @@
-@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700;900&family=Noto+Serif:wght@400;500;600;700;900&display=swap");
 @import "tailwindcss";
+
+@font-face {
+  font-family: "Noto Serif TC";
+  src: url("/fonts/noto-serif-tc-400.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Serif TC";
+  src: url("/fonts/noto-serif-tc-500.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Serif TC";
+  src: url("/fonts/noto-serif-tc-600.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Serif TC";
+  src: url("/fonts/noto-serif-tc-700.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Serif TC";
+  src: url("/fonts/noto-serif-tc-900.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 @theme inline {
   --font-sans: "Noto Serif TC", "Noto Serif", "Songti TC", "PMingLiU", serif;
@@ -23,9 +62,9 @@
   --color-ring: #2D5F5D;
   --radius: 0.5rem;
 
-  --color-status-stable: #2F855A;
-  --color-status-caution: #D97706;
-  --color-status-unstable: #DC2626;
+  --color-status-smooth: #2F855A;
+  --color-status-attention: #D97706;
+  --color-status-review: #DC2626;
 }
 
 @layer base {

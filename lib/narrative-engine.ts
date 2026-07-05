@@ -32,8 +32,8 @@ export function formatSessionDate(timestamp: string) {
 
 export function generateSessionSummary(session: SessionEvent): string {
   const base = `${formatSessionDate(session.timestamp)} 完成 ${session.reps}/5 次坐站，總耗時 ${session.totalDurationSec.toFixed(1)} 秒，平均每次 ${session.avgDurationSec.toFixed(1)} 秒。`
-  const risk = `系統標記為「${levelLabel(session.level)}」，最大偏斜 ${session.tiltMaxDeg.toFixed(0)} 度，晃動事件 ${session.instabilityEvents} 次。`
-  return `${base}${risk}`
+  const observation = `系統標記為「${levelLabel(session.level)}」，最大偏斜 ${session.tiltMaxDeg.toFixed(0)} 度，晃動事件 ${session.instabilityEvents} 次。`
+  return `${base}${observation}`
 }
 
 export function generateTrendSummary(sessions: SessionEvent[]): TrendSummary {
@@ -43,7 +43,7 @@ export function generateTrendSummary(sessions: SessionEvent[]): TrendSummary {
       latestLevel: null,
       avgDurationSec: null,
       totalInstabilityEvents: 0,
-      cautionOrUnstableCount: 0,
+      attentionOrReviewCount: 0,
       narrative: '目前沒有測試紀錄。完成一次坐站測試並儲存後，系統會在這裡整理趨勢。',
     }
   }
@@ -52,7 +52,7 @@ export function generateTrendSummary(sessions: SessionEvent[]): TrendSummary {
   const avgDurationSec =
     recent.reduce((sum, item) => sum + item.avgDurationSec, 0) / recent.length
   const totalInstabilityEvents = recent.reduce((sum, item) => sum + item.instabilityEvents, 0)
-  const cautionOrUnstableCount = recent.filter((item) => item.level !== 'smooth').length
+  const attentionOrReviewCount = recent.filter((item) => item.level !== 'smooth').length
   const latestLevel = sessions[0]?.level ?? null
 
   // 趨勢方向判斷（比較最近 3 筆 vs 前 3 筆）
@@ -66,16 +66,16 @@ export function generateTrendSummary(sessions: SessionEvent[]): TrendSummary {
   }
 
   const narrative =
-    cautionOrUnstableCount === 0
+    attentionOrReviewCount === 0
       ? `最近 ${recent.length} 筆整體穩定，沒有明顯晃動或偏斜訊號。${trendNote}`
-      : `最近 ${recent.length} 筆中有 ${cautionOrUnstableCount} 筆需要留意。${trendNote}建議觀察是否集中在特定日期或疲累時段。`
+      : `最近 ${recent.length} 筆中有 ${attentionOrReviewCount} 筆需要留意。${trendNote}建議觀察是否集中在特定日期或疲累時段。`
 
   return {
     totalSessions: sessions.length,
     latestLevel,
     avgDurationSec,
     totalInstabilityEvents,
-    cautionOrUnstableCount,
+    attentionOrReviewCount,
     narrative,
   }
 }
@@ -126,7 +126,7 @@ export function answerFamilyQuestion(question: string, sessions: SessionEvent[])
   const lower = question.toLowerCase()
   const summary = generateTrendSummary(sessions)
   const latest = sessions[0]
-  const unstable = sessions.filter((s) => s.level === 'review')
+  const reviewSessions = sessions.filter((s) => s.level === 'review')
   const caution = sessions.filter((s) => s.level === 'attention')
   const tiltMax = [...sessions].sort((a, b) => b.tiltMaxDeg - a.tiltMaxDeg)[0]
 
@@ -197,7 +197,7 @@ export function answerFamilyQuestion(question: string, sessions: SessionEvent[])
     return `最新一次平均每次坐站耗時 ${latest.avgDurationSec.toFixed(1)}s，近 ${sessions.slice(0,7).length} 筆平均 ${avg}s。` +
       `最快是 ${formatSessionDate(fastest.timestamp)} 的 ${fastest.avgDurationSec.toFixed(1)}s，` +
       `最慢是 ${formatSessionDate(slowest.timestamp)} 的 ${slowest.avgDurationSec.toFixed(1)}s。` +
-      `（文獻基準：60-69 歲平均 2.28s/次；>3.34s/次 屬高風險 — Bohannon 2006）`
+      `（文獻基準：60-69 歲平均 2.28s/次；>3.34s/次 屬明顯偏慢範圍 — Bohannon 2006）`
   }
 
   // ── 偏斜查詢 ──────────────────────────────────────────────
@@ -210,12 +210,12 @@ export function answerFamilyQuestion(question: string, sessions: SessionEvent[])
   // ── 不穩定查詢 ────────────────────────────────────────────
   if (lower.includes('不穩') || lower.includes('哪天') || lower.includes('哪次') ||
       lower.includes('危險') || lower.includes('需陪同') || lower.includes('最差')) {
-    if (unstable.length === 0) {
-      return '目前沒有被標記為「需陪同」的紀錄。建議持續觀察，若出現連續兩次「留意」則需要更積極跟進。'
+    if (reviewSessions.length === 0) {
+      return '目前沒有被標記為「建議確認」的紀錄。建議持續觀察，若出現連續兩次「留意」則需要更積極跟進。'
     }
-    const detail = generateSessionSummary(unstable[0])
+    const detail = generateSessionSummary(reviewSessions[0])
     return `最需要留意的是 ${detail}` +
-      (unstable.length > 1 ? ` 共有 ${unstable.length} 次「需陪同」紀錄。` : '')
+      (reviewSessions.length > 1 ? ` 共有 ${reviewSessions.length} 次「建議確認」紀錄。` : '')
   }
 
   // ── 晃動查詢 ──────────────────────────────────────────────
@@ -225,7 +225,7 @@ export function answerFamilyQuestion(question: string, sessions: SessionEvent[])
     const recentN = sessions.slice(0, 7).length
     const swayAvg = recentN > 0 ? (totalSway / recentN).toFixed(1) : '-'
     return `近期 ${recentN} 筆共有 ${totalSway} 次晃動事件，平均每次測試 ${swayAvg} 次。` +
-      `最新一次：${latest.instabilityEvents} 次。（單次 2 次以上為高風險訊號）`
+      `最新一次：${latest.instabilityEvents} 次。（單次 2 次以上代表本次觀察中有明顯晃動訊號）`
   }
 
   // ── 留意紀錄查詢 ─────────────────────────────────────────

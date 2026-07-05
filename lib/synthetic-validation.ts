@@ -53,7 +53,7 @@ export type AgeGroup = keyof typeof FTSST_NORMATIVE
 // 來源：Bohannon (2006), Whitney (2005)
 // ─────────────────────────────────────────────────────────────────────────────
 const GT = {
-  // >16.7s = >2 SD above 60-69yo mean → 高跌倒風險 → unstable
+  // >16.7s = >2 SD above 60-69yo mean → clearly slow functional performance
   UNSTABLE_TOTAL_SEC: 16.7,
   // >12s = 比 60-69yo 平均差 → 留意 → caution
   CAUTION_TOTAL_SEC: 12.0,
@@ -144,7 +144,7 @@ export function generateSyntheticPatient(id: number, ageGroup: AgeGroup): Synthe
   const zScore = (totalDurationSec - norm.meanSec) / norm.sdSec
 
   // 偏斜：基礎 5°，隨表現惡化而增加，加個體隨機變異（SD ≈ 4°）
-  const tiltMaxDeg = clamp(Math.abs(gaussianRandom(5 + zScore * 3.2, 4)), 0, 35)
+  const tiltMaxDeg = clamp(Math.abs(gaussianRandom(5 + zScore * 3.2, 4)), 0, 45)
 
   // 晃動：Poisson mean 隨 z-score 增加，至少 0
   const swayMean = clamp(0.25 + zScore * 0.45, 0, 4)

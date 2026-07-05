@@ -173,7 +173,7 @@ export default function HomePage() {
                   <div className="space-y-3 text-sm">
                     <div className="rounded-lg border border-[#E5DCCF] p-3">
                       <span className="text-xs font-black text-[#DC2626]">傳統方式</span>
-                      <div className="mt-1 font-black text-[#1F2937]">平均 &gt; 3.34s → 高風險</div>
+                      <div className="mt-1 font-black text-[#1F2937]">平均 &gt; 3.34s → 明顯偏慢</div>
                       <div className="mt-0.5 text-xs text-[#9CA3AF]">所有人用同一個閾值</div>
                     </div>
                     <div className="rounded-lg border border-[#2D5F5D]/20 p-3">
@@ -206,7 +206,7 @@ export default function HomePage() {
                 <div className="space-y-3">
                   {[
                     { icon: ShieldCheck, label: '極致隱私保護 (Privacy by Constraint)', desc: '因為技術限制選擇了本機運算，恰好符合偏鄉長輩對監視鏡頭的擔憂，資料 100% 不離開手機' },
-                    { icon: LockKeyhole, label: '跨越數位落差', desc: '將專業分析流程，化為偏鄉阿公阿嬤手中也能運行的免費 App' },
+                    { icon: LockKeyhole, label: '跨越數位落差', desc: '將專業分析流程，化為偏鄉與資源有限家庭也能運行的免費 App' },
                     { icon: BarChart3, label: '參數一致性驗證', desc: '以 Monte Carlo 模擬驗證決策邏輯（N=1000+）' },
                   ].map(({ icon: Icon, label, desc }) => (
                     <div key={label} className="flex items-start gap-3 rounded-lg border border-[#D5C9BB] bg-[#FFFDF9] p-3">

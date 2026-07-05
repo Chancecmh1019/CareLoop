@@ -65,7 +65,7 @@ function sd(values: number[], mu: number): number {
  * @param sessions - 最新的歷史紀錄（取最多 7 筆）
  */
 export function computePersonalBaseline(sessions: SessionEvent[]): PersonalBaseline {
-  // 只取最近 7 筆的 stable/caution 紀錄計算基準線（排除追蹤中斷的異常測試）
+  // 只取最近 7 筆可用紀錄計算基準線（排除追蹤中斷的異常測試）
   const valid = sessions
     .slice(0, 7)
     .filter((s) => s.reps >= 5 && s.trackingQuality !== 'lost')
