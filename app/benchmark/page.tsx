@@ -1,5 +1,4 @@
-import { ArrowLeft, BookOpen, Activity, Info, ShieldAlert, CheckCircle2 } from 'lucide-react'
-import Link from 'next/link'
+import { BookOpen, Activity, Info, ShieldAlert, CheckCircle2 } from 'lucide-react'
 import { Nav } from '@/components/nav'
 
 export default function BenchmarkPage() {
@@ -9,13 +8,7 @@ export default function BenchmarkPage() {
       <main className="mx-auto w-full max-w-4xl px-4 py-8 pb-32">
         <header className="mb-10">
           <div className="flex items-center justify-between mb-6">
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-sm font-bold text-[#2D5F5D] transition-colors hover:text-[#234A48]"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              返回首頁
-            </Link>
+
             <div className="flex items-center gap-2 rounded-full bg-[#2D5F5D]/10 px-3 py-1 text-xs font-black text-[#2D5F5D]">
               <BookOpen className="h-3.5 w-3.5" />
               v0.1.0 原型
