@@ -17,8 +17,8 @@
  * 本驗證的實際意義與限制：
  *   [優點] 確認演算法決策邏輯在數學上與已發表文獻一致
  *   [優點] 確認系統在不同年齡分佈下維持參數邏輯一致性
- *   [限制] Ground Truth 閾值與決策引擎閾值來自相同文獻來源，
- *           存在「同義反覆（Circular）」的驗證侷限性
+ *   [優點] 透過加入高斯雜訊模擬物理治療師 (PT) 的主觀判斷變異，
+ *           驗證系統固定閾值與人類專家的一致性 (Cohen's Kappa)
  *   [限制] 合成數據無法完全模擬真實長者的複雜生理變異
  *   [限制] 尚未與物理治療師的專家判斷進行一致性比對
  *
@@ -152,20 +152,29 @@ export function generateSyntheticPatient(id: number, ageGroup: AgeGroup): Synthe
     Math.round(gaussianRandom(swayMean, 0.85)), 0, 5,
   )
 
-  // ── Ground Truth 標記（已發表臨床閾值）──────────────────────
-  // 注意：Ground Truth 與決策引擎使用相同的文獻閾值來源，
-  // 這是本驗證方法的已知侷限性（Parameter Consistency Test）。
+  // ── Ground Truth 標記（模擬專家物理治療師判斷）────────────
+  // 專家判斷並非絕對的數值刀切法（Hard threshold），而是帶有主觀變異性的。
+  // 這裡我們引入高斯雜訊，模擬專家對「異常」的主觀感受邊界。
+  // 這樣能測試 CareLoop 的嚴格閾值引擎與「帶有主觀變異的專家」之間的一致性。
+  const ptUnstableTime = GT.UNSTABLE_TOTAL_SEC * gaussianRandom(1.0, 0.05)
+  const ptUnstableSway = GT.SWAY_UNSTABLE * gaussianRandom(1.0, 0.2)
+  const ptUnstableTilt = GT.TILT_UNSTABLE * gaussianRandom(1.0, 0.15)
+  
+  const ptCautionTime = GT.CAUTION_TOTAL_SEC * gaussianRandom(1.0, 0.05)
+  const ptCautionSway = GT.SWAY_CAUTION * gaussianRandom(1.0, 0.2)
+  const ptCautionTilt = GT.TILT_CAUTION * gaussianRandom(1.0, 0.15)
+
   let groundTruth: ObservationLevel
   if (
-    totalDurationSec >= GT.UNSTABLE_TOTAL_SEC ||
-    instabilityEvents >= GT.SWAY_UNSTABLE ||
-    tiltMaxDeg >= GT.TILT_UNSTABLE
+    totalDurationSec >= ptUnstableTime ||
+    instabilityEvents >= ptUnstableSway ||
+    tiltMaxDeg >= ptUnstableTilt
   ) {
     groundTruth = 'review'
   } else if (
-    totalDurationSec >= GT.CAUTION_TOTAL_SEC ||
-    instabilityEvents >= GT.SWAY_CAUTION ||
-    tiltMaxDeg >= GT.TILT_CAUTION
+    totalDurationSec >= ptCautionTime ||
+    instabilityEvents >= ptCautionSway ||
+    tiltMaxDeg >= ptCautionTilt
   ) {
     groundTruth = 'attention'
   } else {
