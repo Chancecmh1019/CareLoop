@@ -119,6 +119,8 @@ export function createMotionAnalyzer() {
   let previousState: MotionState = 'unknown'
   let stateSince = 0
   let sawStanding = false
+  let lowestHipYDuringStand: number | null = null
+  let seatedCandidateCount = 0
   let reps = 0
   let startedAtMs: number | null = null
   let completedAtMs: number | null = null
@@ -155,6 +157,8 @@ export function createMotionAnalyzer() {
     previousState = 'unknown'
     stateSince = 0
     sawStanding = false
+    lowestHipYDuringStand = null
+    seatedCandidateCount = 0
     reps = 0
     startedAtMs = null
     completedAtMs = null
@@ -297,12 +301,25 @@ export function createMotionAnalyzer() {
 
         if (standingByHip || standingByLeg) {
           motionState = 'standing'
+          lowestHipYDuringStand = lowestHipYDuringStand === null ? hipY : Math.min(lowestHipYDuringStand, hipY)
+          seatedCandidateCount = 0
           lowerBaselineCount = 0
         } else if (seatedByHip || seatedByLeg) {
           motionState = 'sitting'
+          seatedCandidateCount += 1
           lowerBaselineCount = 0
         } else {
           motionState = 'moving'
+          if (
+            sawStanding &&
+            lowestHipYDuringStand !== null &&
+            hipY - lowestHipYDuringStand >= MOTION_THRESHOLDS.STAND_DELTA_Y * 0.65
+          ) {
+            seatedCandidateCount += 1
+            if (seatedCandidateCount >= 6) motionState = 'sitting'
+          } else {
+            seatedCandidateCount = 0
+          }
           // Auto-correct seated baseline downwards!
           // If they calibrated while standing, their seated position will be much lower (larger Y).
           if (hipY > seatedHipY + MOTION_THRESHOLDS.SITTING_TOLERANCE_Y) {
@@ -349,9 +366,19 @@ export function createMotionAnalyzer() {
       if (motionState === 'sitting' && sawStanding) {
         reps += 1
         sawStanding = false
+        lowestHipYDuringStand = null
+        seatedCandidateCount = 0
         // Re-calibrate seated baseline after each rep (accounts for micro-shifts in posture)
-        if (hipY !== null) seatedHipY = hipY
-        if (legExtension !== null) seatedLegExtension = legExtension
+        if (hipY !== null && seatedHipY !== null) {
+          seatedHipY = hipY >= seatedHipY
+            ? seatedHipY * 0.65 + hipY * 0.35
+            : seatedHipY
+        }
+        if (legExtension !== null && seatedLegExtension !== null) {
+          seatedLegExtension = legExtension <= seatedLegExtension + MOTION_THRESHOLDS.LEG_EXTENSION_SITTING_TOLERANCE_Y
+            ? seatedLegExtension * 0.7 + legExtension * 0.3
+            : seatedLegExtension
+        }
         if (reps >= MOTION_THRESHOLDS.TARGET_REPS) completedAtMs = timestampMs
       }
     }
