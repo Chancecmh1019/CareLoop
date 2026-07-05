@@ -13,7 +13,6 @@ export type CoachingEvent =
   | 'tilt_severe'
   | 'sway_detected'
   | 'too_fast'
-  | 'rep_done'
   | 'realign'
 
 const COACHING_SPEECH: Record<CoachingEvent, string> = {
@@ -22,7 +21,6 @@ const COACHING_SPEECH: Record<CoachingEvent, string> = {
   tilt_severe: '身體偏得比較多，先停一下，扶穩再繼續。',
   sway_detected: '我看到晃動了，下一次放慢一點，站穩再坐下。',
   too_fast: '速度太快了，請用穩定、可控制的節奏完成。',
-  rep_done: '很好，這一次完成了，坐穩後準備下一次。',
   realign: '我看不到完整身體，請回到鏡頭中央。',
 }
 
@@ -37,6 +35,43 @@ const THRESHOLDS = {
 export function createCoachingEngine() {
   const lastPlayed = new Map<CoachingEvent, number>()
   let lastRepSpoken = 0
+  let audioCtx: AudioContext | null = null
+
+  function initAudioContext() {
+    if (typeof window !== 'undefined' && !audioCtx) {
+      const AudioCtxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      if (AudioCtxClass) {
+        audioCtx = new AudioCtxClass()
+      }
+    }
+  }
+
+  function playBeep() {
+    initAudioContext()
+    if (!audioCtx) return
+    
+    // Resume context if suspended (browser autoplay policy)
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume()
+    }
+
+    const oscillator = audioCtx.createOscillator()
+    const gainNode = audioCtx.createGain()
+
+    oscillator.type = 'sine'
+    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime) // High pitch A5
+    oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1)
+
+    gainNode.gain.setValueAtTime(0, audioCtx.currentTime)
+    gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.02)
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15)
+
+    oscillator.connect(gainNode)
+    gainNode.connect(audioCtx.destination)
+
+    oscillator.start(audioCtx.currentTime)
+    oscillator.stop(audioCtx.currentTime + 0.15)
+  }
 
   function canPlay(event: CoachingEvent): boolean {
     const last = lastPlayed.get(event) ?? 0
@@ -65,8 +100,8 @@ export function createCoachingEngine() {
 
     if (ctx.reps > lastRepSpoken && ctx.motionState === 'sitting') {
       lastRepSpoken = ctx.reps
-      speak('rep_done')
-      return 'rep_done'
+      playBeep()
+      return null
     }
 
     const tilt = ctx.shoulderTiltDeg ?? 0
@@ -100,6 +135,10 @@ export function createCoachingEngine() {
     lastRepSpoken = 0
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel()
+    }
+    if (audioCtx) {
+      audioCtx.close().catch(() => {})
+      audioCtx = null
     }
   }
 

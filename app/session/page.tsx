@@ -600,7 +600,19 @@ export default function SessionPage() {
     }
 
     const primeTimer = window.setTimeout(() => {
-      setAutoStartCountdown((current) => current ?? AUTO_START_SECONDS)
+      setAutoStartCountdown((current) => {
+        if (current === null) {
+          if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+            window.speechSynthesis.cancel()
+            const utterance = new SpeechSynthesisUtterance('掃描完成。測驗即將開始，請連續站直再坐下五次，用您平時的自然速度進行。')
+            utterance.lang = 'zh-TW'
+            utterance.rate = 1.0
+            window.speechSynthesis.speak(utterance)
+          }
+          return AUTO_START_SECONDS
+        }
+        return current
+      })
     }, 0)
     const timer = window.setInterval(() => {
       setAutoStartCountdown((current) => {
@@ -617,6 +629,9 @@ export default function SessionPage() {
     return () => {
       window.clearTimeout(primeTimer)
       window.clearInterval(timer)
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel()
+      }
     }
   }, [canAutoStart, startTest])
 
