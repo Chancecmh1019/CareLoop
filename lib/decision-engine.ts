@@ -50,6 +50,11 @@ export const MOTION_THRESHOLDS = {
    * 對應文獻定義「顯著偏慢」截斷點（>2 SD above 60-69yo mean）
    */
   VERY_SLOW_AVG_SEC: 3.34,
+  /**
+   * SEATED_CANDIDATE_FRAMES: 座下確認所需的持續帧數
+   * 因正面拍攝時骨盆前後移動在 2D Y軸變化小，需較寬沬的確認磁窗（降自 6 幀 4）
+   */
+  SEATED_CANDIDATE_FRAMES: 4,
   // 向下相容舊名稱（deprecated）
   get MAX_TILT_DEG_STABLE() { return this.MAX_TILT_DEG_ATTENTION },
   get MAX_TILT_DEG_UNSTABLE() { return this.MAX_TILT_DEG_REVIEW },

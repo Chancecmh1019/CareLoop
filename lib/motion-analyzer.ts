@@ -474,7 +474,7 @@ export function createMotionAnalyzer() {
             (seatedKneeAngle !== null && rawKneeAngle - seatedKneeAngle >= 35)
           )
         const seatedByHip = sawStanding
-          ? hipY >= seatedHipY - MOTION_THRESHOLDS.SITTING_TOLERANCE_Y
+          ? hipY >= seatedHipY - (MOTION_THRESHOLDS.SITTING_TOLERANCE_Y * 1.5)
           : Math.abs(hipY - seatedHipY) <= MOTION_THRESHOLDS.SITTING_TOLERANCE_Y
         const seatedByLeg =
           seatedLegExtension !== null &&
@@ -502,7 +502,7 @@ export function createMotionAnalyzer() {
             hipY - lowestHipYDuringStand >= MOTION_THRESHOLDS.STAND_DELTA_Y * 0.65
           ) {
             seatedCandidateCount += 1
-            if (seatedCandidateCount >= 6) motionState = 'sitting'
+            if (seatedCandidateCount >= MOTION_THRESHOLDS.SEATED_CANDIDATE_FRAMES) motionState = 'sitting'
           } else {
             seatedCandidateCount = 0
           }

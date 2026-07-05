@@ -336,17 +336,6 @@ function CompletionOverlay({
           {deviation.isPersonalAnomaly && <div className="mt-1 text-[10px] font-bold text-[#D97706]">超出個人正常變動範圍（均值 +2SD）</div>}
         </div>
 
-        {session.notes && session.notes.length > 0 && (
-          <div className="mb-4 rounded-xl bg-black/40 px-3 py-2.5">
-            <div className="mb-1 text-[10px] font-black text-white/50">系統判定說明</div>
-            <ul className="list-inside list-disc text-xs font-bold leading-5 text-white/80">
-              {session.notes.map((note, idx) => (
-                <li key={idx}>{note}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
         <div className="grid gap-2 sm:grid-cols-3">
           {!isSaved ? (
             <button type="button" onClick={onSave} className="col-span-1 flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#2D5F5D] font-black text-white active:scale-95 sm:col-span-2">
@@ -364,6 +353,7 @@ function CompletionOverlay({
             再測一次
           </button>
         </div>
+
       </div>
     </div>
   )
