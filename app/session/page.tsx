@@ -222,7 +222,7 @@ function getCoachCueForDisplay({
     if (snapshot.reps === 0) {
       return {
         mode: 'stand',
-        title: '✅ 掃描完成！測驗開始',
+        title: '掃描完成！測驗開始',
         body: '請開始第 1 次起立！用穩定速度站直，眼睛看前方。',
         action: 'stand',
         tone: 'stand',
