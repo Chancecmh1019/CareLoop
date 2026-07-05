@@ -654,7 +654,7 @@ export default function SessionPage() {
     lastNotifiedRef.current = currentStatus
     if (['smooth', 'attention', 'review', 'tracking-lost'].includes(currentStatus)) {
       notifyStatus(currentStatus as ObservationLevel | 'tracking-lost', {
-        speech: currentStatus === 'tracking-lost' || currentStatus === 'review',
+        speech: currentStatus === 'tracking-lost',
       })
     }
   }, [currentStatus])
@@ -672,7 +672,8 @@ export default function SessionPage() {
     notifyCoachAction(coachCue.action, {
       reps: snapshot.reps,
       target: MOTION_THRESHOLDS.TARGET_REPS,
-      interrupt: coachCue.action === 'stand' || coachCue.action === 'sit' || coachCue.action === 'realign',
+      speech: coachCue.action === 'realign' || coachCue.action === 'complete',
+      interrupt: coachCue.action === 'realign',
     })
   }, [analyzing, coachCue.action, snapshot.nextAction, snapshot.reps, snapshot.trackingQuality])
 
